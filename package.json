@@ -1,0 +1,27 @@
+{
+  "name": "csa-answer-raid",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "计算机协会百团大战 · 硬核答题突袭 (Svelte 5 + Vite)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json",
+    "test:bank": "node --experimental-strip-types tools/verify.mjs",
+    "test:store": "node --experimental-strip-types --import ./tools/store-register.mjs tools/store-test.mjs",
+    "test:dom": "node tools/smoke.mjs",
+    "test": "pnpm run check && pnpm run test:bank && pnpm run test:store && pnpm run build && pnpm run test:dom"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "@tsconfig/svelte": "^5.0.8",
+    "@types/node": "^24.13.3",
+    "happy-dom": "^20.14.5",
+    "svelte": "^5.57.0",
+    "svelte-check": "^4.7.6",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0"
+  }
+}

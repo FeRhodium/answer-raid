@@ -1,0 +1,309 @@
+<script lang="ts">
+  /** 顶部 HUD:档位 / 进度 / 不灭次数 / 分数 / 连击 / 倒计时 / 本题潜在得分。 */
+  import { TIERS } from '../data/tiers';
+  import { ROUNDS_PER_TIER } from '../data/types';
+  import { game, tier, livePotential, comboFactor } from '../quiz.svelte';
+
+  const t = $derived(tier());
+  const pct = $derived(
+    game.timeLimit > 0 ? Math.max(0, Math.min(1, game.timeLeft / game.timeLimit)) : 0,
+  );
+  const danger = $derived(game.timeLeft <= 5);
+  const warn = $derived(game.timeLeft <= game.timeLimit * 0.34);
+  const lives = $derived(t.allowMiss);
+</script>
+
+<header class="hud panel" style="--tier-hue:{t.hue}">
+  <div class="row1">
+    <div class="who">
+      <span class="pfx">root@csa:~$</span>
+      <b>{game.handle || 'ANON'}</b>
+    </div>
+
+    <div class="tiers">
+      {#each TIERS as x, i (x.id)}
+        <span
+          class="tb"
+          class:cur={i === game.tierIndex}
+          class:done={i < game.tierIndex}
+          style="--th:{x.hue}"
+        >
+          <span class="ti">{x.icon}</span>{x.name}
+        </span>
+      {/each}
+    </div>
+
+    <div class="scoreBox">
+      <span class="lbl">SCORE</span>
+      <b class="score" class:bump={game.lastGain > 0}>{game.score.toLocaleString()}</b>
+    </div>
+  </div>
+
+  <div class="row2">
+    <div class="meta">
+      <span class="chip tierChip">{t.label}</span>
+      <span class="progWrap" title="本档晋级进度">
+        {#each Array(ROUNDS_PER_TIER) as _, i (i)}
+          <span class="seg" class:on={i < game.tierProgress}></span>
+        {/each}
+        <span class="progTxt mute">{game.tierProgress}/{ROUNDS_PER_TIER}</span>
+      </span>
+
+      <span class="lives" title="不灭次数:答错扣一次,归零出局">
+        <span class="lbl mute">不灭</span>
+        {#each Array(lives) as _, i (i)}
+          <span class="life" class:lost={i >= game.lives}>◆</span>
+        {/each}
+      </span>
+
+      <span class="combo" class:hot={game.chain >= 3}>
+        <span class="lbl mute">连击</span>
+        <b>×{game.chain}</b>
+        {#if comboFactor() > 1}<em>倍率 {(comboFactor() * 100).toFixed(0)}%</em>{/if}
+      </span>
+
+      <span class="pot" title="本题答对可得分(随时间衰减)">
+        <span class="lbl mute">本题</span>
+        <b>+{livePotential()}</b>
+      </span>
+    </div>
+
+    <div class="timer" class:danger class:warn>
+      <span class="tnum">{game.timeLeft.toFixed(1)}<em>s</em></span>
+      <span class="tbar">
+        <span class="tfill" style="transform:scaleX({pct})"></span>
+        {#each Array(9) as _, i (i)}
+          <span class="tick" style="left:{(i + 1) * 10}%"></span>
+        {/each}
+      </span>
+    </div>
+  </div>
+</header>
+
+<style>
+  .hud {
+    position: relative;
+    z-index: 4;
+    padding: 0.7rem 0.9rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    border-top-width: 2px;
+  }
+
+  .row1 {
+    display: grid;
+    grid-template-columns: minmax(0, auto) 1fr minmax(0, auto);
+    gap: 0.8rem;
+    align-items: center;
+  }
+  .who {
+    display: flex;
+    align-items: baseline;
+    gap: 0.45rem;
+    font-size: 0.86rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .who .pfx {
+    color: var(--fg-mute);
+    font-size: 0.74rem;
+  }
+  .who b {
+    color: var(--accent);
+    letter-spacing: 0.06em;
+  }
+
+  .tiers {
+    display: flex;
+    gap: 0.4rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .tb {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.14rem 0.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    border: 1px solid var(--line);
+    color: var(--fg-mute);
+    transition: all 0.2s;
+  }
+  .tb .ti {
+    opacity: 0.7;
+  }
+  .tb.done {
+    color: hsl(var(--th) 70% 60%);
+    border-color: hsl(var(--th) 70% 45% / 0.5);
+    opacity: 0.75;
+  }
+  .tb.cur {
+    color: #04060a;
+    background: hsl(var(--th) 100% 62%);
+    border-color: hsl(var(--th) 100% 70%);
+    box-shadow: 0 0 18px hsl(var(--th) 100% 60% / 0.5);
+    opacity: 1;
+  }
+  .tb.cur .ti {
+    opacity: 1;
+  }
+
+  .scoreBox {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.05;
+  }
+  .lbl {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    color: var(--fg-mute);
+    text-transform: uppercase;
+  }
+  .score {
+    font-family: var(--display);
+    font-size: 1.6rem;
+    color: var(--accent);
+    text-shadow: 0 0 18px var(--accent-glow);
+    font-variant-numeric: tabular-nums;
+  }
+  .score.bump {
+    animation: popNum 0.4s ease-out both;
+  }
+
+  .row2 {
+    display: flex;
+    gap: 0.9rem;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    font-size: 0.78rem;
+  }
+  .tierChip {
+    font-size: 0.68rem;
+  }
+  .progWrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.22rem;
+  }
+  .seg {
+    width: 20px;
+    height: 6px;
+    background: hsl(var(--tier-hue) 40% 30% / 0.5);
+    border: 1px solid var(--line);
+  }
+  .seg.on {
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+  .progTxt {
+    font-size: 0.7rem;
+    margin-left: 0.25rem;
+  }
+
+  .lives,
+  .combo,
+  .pot {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .life {
+    color: var(--accent);
+    text-shadow: 0 0 10px var(--accent-glow);
+    font-size: 0.9rem;
+  }
+  .life.lost {
+    color: #2a3a36;
+    text-shadow: none;
+  }
+  .combo b {
+    color: var(--fg-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .combo em {
+    font-style: normal;
+    font-size: 0.68rem;
+    color: var(--accent);
+    animation: blink 1.6s steps(1) infinite;
+  }
+  .combo.hot b {
+    color: var(--accent);
+    text-shadow: 0 0 14px var(--accent-glow);
+    animation: popNum 0.3s ease-out both;
+  }
+  .pot b {
+    color: #eafff6;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timer {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: min(280px, 100%);
+    flex: 1;
+    justify-content: flex-end;
+  }
+  .tnum {
+    font-family: var(--display);
+    font-size: 1.25rem;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .tnum em {
+    font-style: normal;
+    font-size: 0.6em;
+    opacity: 0.7;
+  }
+  .tbar {
+    position: relative;
+    flex: 1;
+    max-width: 260px;
+    height: 9px;
+    background: #050a0d;
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .tfill {
+    position: absolute;
+    inset: 0;
+    transform-origin: left center;
+    background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+    box-shadow: 0 0 14px var(--accent-glow);
+    transition: transform 0.1s linear;
+  }
+  .tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(4, 6, 10, 0.85);
+  }
+  .timer.warn .tfill {
+    background: linear-gradient(90deg, #7a5a00, var(--warn));
+    box-shadow: 0 0 14px rgba(255, 201, 60, 0.5);
+  }
+  .timer.warn .tnum {
+    color: var(--warn);
+  }
+  .timer.danger .tfill {
+    background: linear-gradient(90deg, #6c0d1c, var(--danger));
+    box-shadow: 0 0 18px rgba(255, 69, 96, 0.6);
+  }
+  .timer.danger .tnum {
+    color: var(--danger);
+    animation: blink 0.5s steps(1) infinite;
+  }
+</style>

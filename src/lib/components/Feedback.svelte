@@ -1,0 +1,158 @@
+<script lang="ts">
+  /** 判定面板:正误 + 原理讲解 + 得分明细。 */
+  import { fly } from 'svelte/transition';
+  import Rich from './Rich.svelte';
+  import { game, tier } from '../quiz.svelte';
+
+  const cur = $derived(game.current);
+  const verdict = $derived(
+    game.timesUp ? 'TIMEOUT' : game.isCorrect ? 'ACCESS GRANTED' : 'ACCESS DENIED',
+  );
+</script>
+
+{#if cur}
+  <section class="fb panel" class:ok={game.isCorrect === true} class:bad={game.isCorrect !== true} in:fly={{ y: 16, duration: 260 }}>
+    <div class="top">
+      <span class="verdict">
+        {#if game.isCorrect}
+          <span class="glyph">✓</span>{verdict}
+        {:else if game.timesUp}
+          <span class="glyph">⏱</span>{verdict}
+        {:else}
+          <span class="glyph">✗</span>{verdict}
+        {/if}
+      </span>
+
+      <span class="rightAns mute">
+        正解 <b>{String.fromCharCode(65 + cur.answerIndex)}</b>
+        <span class="sep">·</span>
+        <Rich text={cur.options[cur.answerIndex]} />
+      </span>
+
+      {#if game.isCorrect}
+        <span class="gain">+{game.lastGain}</span>
+      {:else}
+        <span class="loss">不灭 −1 · 剩 {Math.max(0, game.lives)}</span>
+      {/if}
+    </div>
+
+    <div class="why">
+      <span class="wh">// 原理</span>
+      <Rich text={cur.q.explain} />
+    </div>
+
+    <div class="foot">
+      <span class="brk mute">{game.lastBreakdown}</span>
+      <span class="tierNow" style="--th:{tier().hue}">{tier().label} · 进度 {game.tierProgress}/5</span>
+      {#if game.chain >= 3}
+        <span class="fire">连击 ×{game.chain} 保持中</span>
+      {/if}
+    </div>
+  </section>
+{/if}
+
+<style>
+  .fb {
+    position: relative;
+    z-index: 4;
+    padding: 0.9rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    border-left-width: 3px;
+  }
+  .fb.ok {
+    border-left-color: var(--accent);
+    box-shadow: inset 3px 0 30px -6px hsl(var(--hue) 100% 60% / 0.4);
+  }
+  .fb.bad {
+    border-left-color: var(--danger);
+    box-shadow: inset 3px 0 30px -6px rgba(255, 69, 96, 0.45);
+  }
+
+  .top {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+  .verdict {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: var(--display);
+    font-size: 1.1rem;
+    letter-spacing: 0.12em;
+  }
+  .ok .verdict {
+    color: var(--accent);
+    text-shadow: 0 0 16px var(--accent-glow);
+  }
+  .bad .verdict {
+    color: var(--danger);
+    text-shadow: 0 0 16px rgba(255, 69, 96, 0.5);
+  }
+  .glyph {
+    font-size: 1.25em;
+  }
+  .rightAns {
+    font-size: 0.84rem;
+    flex: 1;
+    min-width: 0;
+  }
+  .rightAns b {
+    color: #eafff6;
+  }
+  .rightAns .sep {
+    margin: 0 0.35rem;
+  }
+  .gain {
+    font-family: var(--display);
+    font-size: 1.5rem;
+    color: var(--accent);
+    text-shadow: 0 0 20px var(--accent-glow);
+  }
+  .loss {
+    font-size: 0.82rem;
+    color: var(--danger);
+    border: 1px solid rgba(255, 69, 96, 0.5);
+    padding: 0.1rem 0.5rem;
+  }
+
+  .why {
+    font-size: 0.88rem;
+    line-height: 1.8;
+    color: var(--fg);
+    padding: 0.65rem 0.8rem;
+    background: rgba(3, 6, 10, 0.7);
+    border: 1px dashed var(--line);
+  }
+  .wh {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: var(--fg-mute);
+    margin-bottom: 0.3rem;
+  }
+
+  .foot {
+    display: flex;
+    gap: 0.8rem 1.2rem;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 0.74rem;
+  }
+  .brk {
+    flex: 1;
+    min-width: 0;
+  }
+  .tierNow {
+    color: hsl(var(--th) 90% 65%);
+    border: 1px solid hsl(var(--th) 70% 50% / 0.45);
+    padding: 0.05rem 0.45rem;
+  }
+  .fire {
+    color: var(--warn);
+    animation: blink 1.4s steps(1) infinite;
+  }
+</style>
