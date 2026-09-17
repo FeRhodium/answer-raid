@@ -198,14 +198,27 @@ window.ResizeObserver = class {
   unobserve() {}
   disconnect() {}
 };
+/**
+ * AudioContext 探针。
+ * 两个真实的坑靠它守住:
+ * 1) 页面加载时**不能**创建 AudioContext(浏览器自动播放策略会把它挂起,而且会打印警告),
+ *    必须等到真正的用户手势;
+ * 2) 创建之后**必须调用 resume()**,否则底噪的节点全都建好、start() 也调了,却一声不响
+ *    —— 这正是「音乐听不见」的根因。
+ */
+const audioProbe = { created: 0, resumed: 0, oscillators: 0 };
 window.AudioContext = class {
   constructor() {
-    this.state = 'running';
+    audioProbe.created += 1;
+    this.state = 'suspended';
     this.currentTime = 0;
     this.sampleRate = 48000;
     this.destination = {};
   }
-  resume() {}
+  resume() {
+    audioProbe.resumed += 1;
+    this.state = 'running';
+  }
   createGain() {
     return {
       gain: { value: 1, setValueAtTime: noop, setTargetAtTime: noop, exponentialRampToValueAtTime: noop },
@@ -213,6 +226,7 @@ window.AudioContext = class {
     };
   }
   createOscillator() {
+    audioProbe.oscillators += 1;
     return {
       type: 'square',
       frequency: { value: 0, setValueAtTime: noop, exponentialRampToValueAtTime: noop },
@@ -323,6 +337,9 @@ const optionState = (btn) => {
 /* ---------- 流程 ---------- */
 section('1. 开机自检屏');
 await sleep(0);
+// 反例守卫:这里必须是 0。曾经在 onMount 里就 new AudioContext(),
+// 浏览器会因自动播放策略把它挂起,底噪从此再也发不出声音。
+ok('加载阶段不创建 AudioContext(等用户手势)', audioProbe.created === 0, `created=${audioProbe.created}`);
 ok('渲染了开机自检屏', has('.boot'), document.body.innerHTML.slice(0, 120));
 ok('初始没有 HUD(还没进对局)', !has('.hud'));
 
@@ -349,6 +366,11 @@ ok('输入代号后开始按钮解禁', startBtn.disabled === false);
 
 section('3. 开局');
 startBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+await sleep(80);
+// 「音乐听不见」的回归守卫:底噪要真的建起振荡器,并且上下文必须被 resume 过。
+ok('用户手势后创建了 AudioContext', audioProbe.created === 1, `created=${audioProbe.created}`);
+ok('AudioContext 被 resume(否则底噪静音)', audioProbe.resumed >= 1, `resumed=${audioProbe.resumed}`);
+ok('底噪建起了多个振荡器', audioProbe.oscillators >= 4, `oscillators=${audioProbe.oscillators}`);
 await sleep(60);
 ok('进入对局页(HUD 出现)', has('.hud'));
 ok('题目卡渲染', has('.qcard'));
@@ -533,7 +555,7 @@ section('12. i18n:语言切换');
   const onIntro = bodyText().includes('难度档位');
 
   ok('存在语言切换按钮', !!langBtn, String(!!langBtn));
-  ok('中文界面:语言按钮显示目标语言 EN', langBtn?.textContent.trim() === 'EN', langBtn?.textContent.trim());
+  ok('中文界面:语言按钮带地球图标且指向 EN', langBtn?.textContent.includes('🌐') && langBtn?.textContent.includes('EN'), langBtn?.textContent.trim());
   ok('中文界面:锦囊名是中文', jokerNames().includes('逻辑切割'), jokerNames().join('/'));
 
   if (langBtn) langBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
@@ -541,7 +563,7 @@ section('12. i18n:语言切换');
 
   ok('切到英文:锦囊名变英文', jokerNames().includes('Logic Cut'), jokerNames().join('/'));
   ok('切到英文:中文锦囊名消失', !jokerNames().includes('逻辑切割'), jokerNames().join('/'));
-  ok('切到英文:语言按钮显示目标语言 中', langBtn?.textContent.trim() === '中', langBtn?.textContent.trim());
+  ok('切到英文:语言按钮指向 中', langBtn?.textContent.trim() === '🌐中', langBtn?.textContent.trim());
   ok(
     '语言偏好写入 localStorage',
     JSON.parse(localStorage.getItem('csa.raid.lang.v1') ?? '""') === 'en',

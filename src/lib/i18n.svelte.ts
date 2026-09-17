@@ -17,7 +17,7 @@ export const LOCALES = ['zh', 'en'] as const;
 export type Lang = (typeof LOCALES)[number];
 
 export const LANG_LABEL: Record<Lang, string> = { zh: '中文', en: 'English' };
-/** 语言切换按钮上显示的**目标**语言。 */
+/** 语言切换按钮上显示的**目标**语言(点了之后会变成哪国语言)。 */
 export const LANG_SWITCH_LABEL: Record<Lang, string> = { zh: 'EN', en: '中' };
 
 const LANG_KEY = 'csa.raid.lang.v1';

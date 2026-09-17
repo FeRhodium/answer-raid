@@ -14,7 +14,7 @@
   import RainBackground from './lib/components/RainBackground.svelte';
   import CrtOverlay from './lib/components/CrtOverlay.svelte';
   import { game, tier, soundOn, toggleSound, initAudio, answerByKey, jokerByKey, canUseJoker, useJoker } from './lib/quiz.svelte';
-  import { locale, toggleLocale, LANG_SWITCH_LABEL, msg, t } from './lib/i18n.svelte.ts';
+  import { locale, toggleLocale, LANG_SWITCH_LABEL, LANG_LABEL, msg, t } from './lib/i18n.svelte.ts';
   import { sfx } from './lib/audio';
   import { onMount } from 'svelte';
 
@@ -82,10 +82,10 @@
     <button
       class="mini lang"
       onclick={toggleLocale}
-      title={t(msg('lang.switch'))}
+      title={`${t(msg('lang.switch'))} → ${LANG_LABEL[locale() === 'zh' ? 'en' : 'zh']}`}
       aria-label={t(msg('lang.switch'))}
     >
-      {LANG_SWITCH_LABEL[locale()]}
+      <span class="globe" aria-hidden="true">🌐</span>{LANG_SWITCH_LABEL[locale()]}
     </button>
     <button
       class="mini"
@@ -144,8 +144,20 @@
     transition: border-color 0.15s, color 0.15s;
   }
   .mini.lang {
-    font-size: 0.72rem;
+    width: auto;
+    min-width: 2rem;
+    padding: 0 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    font-family: var(--mono);
     letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .mini.lang .globe {
+    font-size: 0.8rem;
+    line-height: 1;
   }
   .mini:hover {
     border-color: var(--accent);

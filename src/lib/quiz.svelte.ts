@@ -409,10 +409,25 @@ export function soundOn(): boolean {
   return sound.isSoundEnabled();
 }
 
+/**
+ * 初始化音频:**只读取静音偏好**,不在这里创建 AudioContext。
+ * 上下文必须等到真正的用户手势里再建(浏览器自动播放策略),
+ * 否则会得到一个永远 suspended 的上下文 —— 底噪按钮亮着却没有任何声音。
+ * 这里挂一个一次性的手势监听,由 `unlockAudio()` 完成创建与 resume。
+ */
+let audioUnlockArmed = false;
+
 export function initAudio(): void {
-  const on = loadSoundPref();
-  sound.setSoundEnabled(on);
-  sound.unlockAudio();
+  sound.setSoundEnabled(loadSoundPref());
+  if (typeof window === 'undefined' || audioUnlockArmed) return;
+  audioUnlockArmed = true;
+  const unlock = (): void => {
+    window.removeEventListener('pointerdown', unlock);
+    window.removeEventListener('keydown', unlock);
+    sound.unlockAudio();
+  };
+  window.addEventListener('pointerdown', unlock, { once: true });
+  window.addEventListener('keydown', unlock, { once: true });
 }
 
 export function toggleSound(): void {
