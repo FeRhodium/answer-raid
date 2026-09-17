@@ -129,14 +129,14 @@
   .chip.pen {
     border-color: var(--warn);
     color: var(--warn);
-    background: rgba(255, 201, 60, 0.1);
+    background: var(--warn-soft);
   }
 
   .prompt {
     font-family: var(--mono);
     font-size: clamp(0.98rem, 2.7vw, 1.16rem);
     line-height: 1.75;
-    color: #eafff6;
+    color: var(--fg-strong);
     letter-spacing: 0.01em;
   }
 
@@ -146,7 +146,7 @@
     max-width: 420px;
     margin: 0 auto;
     padding: 0.6rem;
-    background: #03060a;
+    background: var(--code-bg);
     border: 1px solid var(--line);
   }
 
@@ -155,15 +155,15 @@
     padding: 0.55rem 0.75rem;
     font-size: 0.84rem;
     color: var(--warn);
-    border: 1px dashed rgba(255, 201, 60, 0.5);
-    background: rgba(255, 201, 60, 0.07);
+    border: 1px dashed var(--warn-glow);
+    background: var(--warn-soft);
   }
   .hk {
     display: inline-block;
     margin-right: 0.6rem;
     font-size: 0.72rem;
     letter-spacing: 0.14em;
-    color: #04060a;
+    color: var(--on-accent);
     background: var(--warn);
     padding: 0.05em 0.4em;
   }
@@ -226,7 +226,7 @@
     font-size: 1.05rem;
     color: var(--accent);
     border: 1px solid var(--line-hard);
-    background: #04070a;
+    background: var(--key-bg);
   }
   .otext {
     min-width: 0;
@@ -247,11 +247,11 @@
   }
   .opts button.right {
     border-color: var(--accent);
-    background: linear-gradient(90deg, hsl(var(--hue) 100% 55% / 0.22), transparent 80%);
-    box-shadow: 0 0 26px hsl(var(--hue) 100% 60% / 0.25), inset 0 0 30px hsl(var(--hue) 100% 60% / 0.12);
+    background: linear-gradient(90deg, var(--accent-soft), transparent 80%);
+    box-shadow: var(--panel-shadow);
   }
   .opts button.right .letter {
-    color: #04060a;
+    color: var(--on-accent);
     background: var(--accent);
     border-color: var(--accent);
   }
@@ -261,11 +261,11 @@
   }
   .opts button.wrong {
     border-color: var(--danger);
-    background: linear-gradient(90deg, rgba(255, 69, 96, 0.2), transparent 80%);
+    background: linear-gradient(90deg, var(--danger-soft), transparent 80%);
     animation: shake 0.4s ease-out both;
   }
   .opts button.wrong .letter {
-    color: #fff;
+    color: var(--on-accent);
     background: var(--danger);
     border-color: var(--danger);
   }

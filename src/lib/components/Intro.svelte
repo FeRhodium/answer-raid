@@ -231,7 +231,7 @@
     line-height: 1;
   }
   .w1 {
-    color: #eafff6;
+    color: var(--fg-strong);
     text-shadow: 0 0 30px hsl(var(--hue) 100% 60% / 0.35);
   }
   .w2 {
@@ -308,7 +308,7 @@
   .name {
     font-family: var(--display);
     font-size: 1.02rem;
-    color: #eafff6;
+    color: var(--fg-strong);
     letter-spacing: 0.05em;
   }
   .name em {
@@ -342,7 +342,7 @@
     gap: 0.5rem;
     padding: 0.55rem 0.7rem;
     border: 1px solid var(--line-hard);
-    background: #03060a;
+    background: var(--code-bg);
     font-size: 0.95rem;
   }
   .field.bad {
@@ -360,7 +360,7 @@
     background: transparent;
     border: none;
     outline: none;
-    color: #eafff6;
+    color: var(--fg-strong);
     font-family: var(--mono);
     font-size: 1rem;
     letter-spacing: 0.06em;
@@ -413,7 +413,7 @@
     text-align: center;
   }
   .jokers b {
-    color: #eafff6;
+    color: var(--fg-strong);
   }
 
   .rule {
@@ -453,7 +453,7 @@
     gap: 0.1rem;
   }
   .bestMeta > span:first-child {
-    color: #eafff6;
+    color: var(--fg-strong);
   }
 
   .hist {

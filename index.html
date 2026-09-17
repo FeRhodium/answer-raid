@@ -4,8 +4,32 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#04060a" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="dark light" />
     <title>ANSWER RAID · 计算机协会百团大战答题终端</title>
+    <script>
+      /**
+       * 在首帧之前定好主题,避免"亮色用户每次加载都先闪一下暗色"。
+       * 逻辑与 src/lib/theme.svelte.ts 保持一致(?theme= > localStorage > 系统偏好 > dark),
+       * 这里必须内联:等 bundle 执行时首帧已经画完了。
+       */
+      (function () {
+        try {
+          var q = new URLSearchParams(location.search).get('theme');
+          var t = q === 'light' || q === 'dark' ? q : null;
+          if (!t) {
+            var raw = localStorage.getItem('csa.raid.theme.v1');
+            var s = raw ? JSON.parse(raw) : null;
+            if (s === 'light' || s === 'dark') t = s;
+          }
+          if (!t && window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) t = 'light';
+          if (!t) t = 'dark';
+          document.documentElement.dataset.theme = t;
+          document.documentElement.style.colorScheme = t;
+        } catch (e) {
+          document.documentElement.dataset.theme = 'dark';
+        }
+      })();
+    </script>
     <meta
       name="description"
       content="计算机协会百团大战硬核答题终端:入门 / 硬核 / ACM 三档难度,每局随机抽题,答错扣不灭次数,通关 ACM 档才算封神。"
@@ -21,8 +45,25 @@
   <body>
     <div id="app"></div>
     <noscript>
-      <p style="font-family: monospace; padding: 2rem; color: #39ff88; background: #04060a">
+      <p
+        style="
+          font-family: monospace;
+          padding: 2rem;
+          color: #0d1c17;
+          background: #f4f7f6;
+        "
+      >
         ANSWER RAID 需要 JavaScript 才能运行。请在浏览器中启用 JS 后重新加载。
+      </p>
+      <p
+        style="
+          font-family: monospace;
+          padding: 0 2rem 2rem;
+          color: #d9f6e8;
+          background: #04060a;
+        "
+      >
+        ANSWER RAID requires JavaScript. Please enable JS and reload.
       </p>
     </noscript>
     <script type="module" src="/src/main.ts"></script>

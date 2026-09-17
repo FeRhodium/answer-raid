@@ -175,7 +175,7 @@
   }
   .headline.lose {
     color: var(--danger);
-    text-shadow: 0 0 34px rgba(255, 69, 96, 0.5);
+    text-shadow: 0 0 34px var(--danger-glow);
   }
   .sub {
     margin: 0;
@@ -214,7 +214,7 @@
   .sc {
     font-family: var(--display);
     font-size: clamp(2rem, 9vw, 3.4rem);
-    color: #eafff6;
+    color: var(--fg-strong);
     font-variant-numeric: tabular-nums;
   }
   .rd {
@@ -226,7 +226,7 @@
     right: 0;
     font-size: 0.7rem;
     letter-spacing: 0.2em;
-    color: #04060a;
+    color: var(--on-accent);
     background: var(--warn);
     padding: 0.1rem 0.5rem;
     animation: blink 1.2s steps(1) infinite;
@@ -266,7 +266,7 @@
   .stats > div {
     border: 1px solid var(--line);
     padding: 0.5rem 0.6rem;
-    background: rgba(3, 6, 10, 0.55);
+    background: var(--scrim);
   }
   .stats dt {
     font-size: 0.68rem;
@@ -321,7 +321,7 @@
     flex: 1;
     height: 14px;
     border: 1px solid hsl(var(--th) 60% 50% / 0.35);
-    background: rgba(3, 6, 10, 0.7);
+    background: var(--scrim);
   }
   .blk.on {
     background: hsl(var(--th) 100% 58%);
@@ -353,7 +353,7 @@
     gap: 0.05rem;
     padding: 0.5rem;
     border: 1px solid var(--line-hard);
-    background: #03060a;
+    background: var(--code-bg);
     color: var(--accent);
     font-size: 1.5rem;
     line-height: 1;
@@ -384,7 +384,7 @@
   .jtxt :global(code) {
     font-family: var(--mono);
     font-size: 0.9em;
-    color: #eafff6;
+    color: var(--fg-strong);
     background: rgba(255, 255, 255, 0.06);
     padding: 0 0.25em;
   }

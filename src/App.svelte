@@ -15,6 +15,7 @@
   import CrtOverlay from './lib/components/CrtOverlay.svelte';
   import { game, tier, soundOn, toggleSound, initAudio, answerByKey, jokerByKey, canUseJoker, useJoker } from './lib/quiz.svelte';
   import { locale, toggleLocale, LANG_SWITCH_LABEL, LANG_LABEL, msg, t } from './lib/i18n.svelte.ts';
+  import { theme, toggleTheme, THEME_ICON } from './lib/theme.svelte.ts';
   import { sfx } from './lib/audio';
   import { onMount } from 'svelte';
 
@@ -47,8 +48,8 @@
   });
 </script>
 
-<RainBackground />
-<CrtOverlay intense={game.phase === 'promote'} />
+<RainBackground enabled={theme() === 'dark'} />
+<CrtOverlay enabled={theme() === 'dark'} intense={game.phase === 'promote'} />
 <svelte:window onkeydown={onKey} />
 
 <div class="app" class:glitch={game.phase === 'feedback' && game.isCorrect === false}>
@@ -86,6 +87,15 @@
       aria-label={t(msg('lang.switch'))}
     >
       <span class="globe" aria-hidden="true">🌐</span>{LANG_SWITCH_LABEL[locale()]}
+    </button>
+    <button
+      class="mini thm"
+      onclick={toggleTheme}
+      title={`${t(msg('theme.switch'))} → ${t(msg(theme() === 'dark' ? 'theme.light' : 'theme.dark'))}`}
+      aria-label={t(msg('theme.switch'))}
+      aria-pressed={theme() === 'light'}
+    >
+      {THEME_ICON[theme()]}
     </button>
     <button
       class="mini snd"
@@ -140,7 +150,7 @@
     display: grid;
     place-items: center;
     font-size: 0.85rem;
-    background: rgba(4, 6, 10, 0.75);
+    background: var(--overlay);
     border: 1px solid var(--line);
     color: var(--fg-dim);
     transition: border-color 0.15s, color 0.15s;
@@ -159,6 +169,14 @@
   }
   .mini.lang .globe {
     font-size: 0.8rem;
+    line-height: 1;
+  }
+  /* 主题按钮:单字形,宽度自适应 */
+  .mini.thm {
+    width: auto;
+    min-width: 2rem;
+    padding: 0 0.45rem;
+    font-size: 0.95rem;
     line-height: 1;
   }
   /* 静音态:除了换图标,再压一层红杠 + 降透明度,避免"看不出点没点上" */

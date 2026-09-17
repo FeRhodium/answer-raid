@@ -142,7 +142,7 @@
     opacity: 0.75;
   }
   .tb.cur {
-    color: #04060a;
+    color: var(--on-accent);
     background: hsl(var(--th) 100% 62%);
     border-color: hsl(var(--th) 100% 70%);
     box-shadow: 0 0 18px hsl(var(--th) 100% 60% / 0.5);
@@ -244,7 +244,7 @@
     animation: popNum 0.3s ease-out both;
   }
   .pot b {
-    color: #eafff6;
+    color: var(--fg-strong);
     font-variant-numeric: tabular-nums;
   }
 
@@ -273,7 +273,7 @@
     flex: 1;
     max-width: 260px;
     height: 9px;
-    background: #050a0d;
+    background: var(--code-bg);
     border: 1px solid var(--line);
     overflow: hidden;
   }
@@ -290,18 +290,18 @@
     top: 0;
     bottom: 0;
     width: 1px;
-    background: rgba(4, 6, 10, 0.85);
+    background: var(--overlay);
   }
   .timer.warn .tfill {
     background: linear-gradient(90deg, #7a5a00, var(--warn));
-    box-shadow: 0 0 14px rgba(255, 201, 60, 0.5);
+    box-shadow: 0 0 14px var(--warn-glow);
   }
   .timer.warn .tnum {
     color: var(--warn);
   }
   .timer.danger .tfill {
     background: linear-gradient(90deg, #6c0d1c, var(--danger));
-    box-shadow: 0 0 18px rgba(255, 69, 96, 0.6);
+    box-shadow: 0 0 18px var(--danger-glow);
   }
   .timer.danger .tnum {
     color: var(--danger);

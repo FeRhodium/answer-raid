@@ -276,6 +276,9 @@ const DICT: Record<Lang, Record<string, Message>> = {
     'tag.双指针': '双指针',
 
     'lang.switch': '切换语言',
+    'theme.switch': '切换主题',
+    'theme.dark': '暗色(CRT)',
+    'theme.light': '亮色(强光)',
     'sound.off': '静音',
     'sound.on': '开启音效',
     'sound.switch': '切换音效',
@@ -436,6 +439,9 @@ const DICT: Record<Lang, Record<string, Message>> = {
     'tag.双指针': 'two pointers',
 
     'lang.switch': 'Switch language',
+    'theme.switch': 'Switch theme',
+    'theme.dark': 'Dark (CRT)',
+    'theme.light': 'Light (bright light)',
     'sound.off': 'Mute',
     'sound.on': 'Unmute',
     'sound.switch': 'Toggle sound',

@@ -67,7 +67,7 @@
     background: radial-gradient(
       ellipse 70% 60% at 50% 50%,
       hsl(var(--th) 80% 12% / 0.96),
-      rgba(3, 5, 8, 0.97)
+      var(--scrim)
     );
     backdrop-filter: blur(4px);
     animation: fadeIn 0.3s ease-out both;
@@ -158,7 +158,7 @@
     padding: 0.9rem 1rem;
     text-align: left;
     border: 1px dashed hsl(var(--th) 70% 60% / 0.35);
-    background: rgba(3, 6, 10, 0.6);
+    background: var(--scrim);
     display: flex;
     flex-direction: column;
     gap: 0.45rem;
@@ -184,7 +184,7 @@
     display: block;
     width: 100%;
     height: 4px;
-    background: #0a1210;
+    background: var(--code-bg);
     border: 1px solid hsl(var(--th) 60% 50% / 0.35);
     overflow: hidden;
   }

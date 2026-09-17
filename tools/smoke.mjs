@@ -581,7 +581,7 @@ section('12. i18n:语言切换');
 
 section('13. 静音按钮');
 {
-  const soundBtn = $$('button').find((b) => b.className.includes('mini') && !b.className.includes('lang'));
+  const soundBtn = $('.mini.snd');
   ok('存在静音按钮', !!soundBtn, String(!!soundBtn));
   const before = soundBtn?.textContent.trim();
   ok('静音按钮有图标', before === '🔊' || before === '🔇', before);
@@ -601,6 +601,40 @@ section('13. 静音按钮');
   if (soundBtn) soundBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   await sleep(120);
   ok('再点一次恢复原图标', soundBtn?.textContent.trim() === before, `${soundBtn?.textContent.trim()} vs ${before}`);
+}
+
+section('14. 主题切换(暗色 CRT ↔ 亮色强光)');
+{
+  const themeBtn = $('.mini.thm');
+  const rootTheme = () => document.documentElement.dataset.theme;
+
+  ok('存在主题切换按钮', !!themeBtn, String(!!themeBtn));
+  ok('初始为暗色主题', rootTheme() === 'dark', String(rootTheme()));
+  ok('暗色下有 CRT 叠层', has('.crt'));
+  ok('暗色下背景 canvas 可见', !$('canvas')?.classList.contains('hidden'));
+  ok('暗色按钮指向亮色(☀)', themeBtn?.textContent.trim() === '☀', themeBtn?.textContent.trim());
+
+  if (themeBtn) themeBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await sleep(120);
+
+  ok('切到亮色:data-theme=light', rootTheme() === 'light', String(rootTheme()));
+  ok('切到亮色:CRT 叠层被移除', !has('.crt'));
+  ok('切到亮色:字符雨 canvas 隐藏', $('canvas')?.classList.contains('hidden') === true);
+  ok('切到亮色:按钮变为 ☾', themeBtn?.textContent.trim() === '☾', themeBtn?.textContent.trim());
+  ok('切到亮色:aria-pressed 为 true', themeBtn?.getAttribute('aria-pressed') === 'true');
+  ok(
+    '主题偏好写入 localStorage',
+    JSON.parse(localStorage.getItem('csa.raid.theme.v1') ?? '""') === 'light',
+    String(localStorage.getItem('csa.raid.theme.v1')),
+  );
+  // 注意:happy-dom 不会真正按 data-theme 选择器解析样式(它不加载 CSS 文件),
+  // 所以这里只能断言"属性写对了";配色本身由 test:theme 直接在 CSS 里校验。
+  ok('主题属性写在 <html> 上(供 CSS 令牌切换)', rootTheme() === 'light', String(rootTheme()));
+
+  if (themeBtn) themeBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await sleep(120);
+  ok('切回暗色:data-theme=dark', rootTheme() === 'dark', String(rootTheme()));
+  ok('切回暗色:CRT 叠层回来', has('.crt'));
 }
 
 /* ---------- 收尾 ---------- */

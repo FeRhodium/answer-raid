@@ -75,7 +75,7 @@
   }
   .fb.bad {
     border-left-color: var(--danger);
-    box-shadow: inset 3px 0 30px -6px rgba(255, 69, 96, 0.45);
+    box-shadow: inset 3px 0 30px -6px var(--danger-glow);
   }
 
   .top {
@@ -98,7 +98,7 @@
   }
   .bad .verdict {
     color: var(--danger);
-    text-shadow: 0 0 16px rgba(255, 69, 96, 0.5);
+    text-shadow: 0 0 16px var(--danger-glow);
   }
   .glyph {
     font-size: 1.25em;
@@ -109,7 +109,7 @@
     min-width: 0;
   }
   .rightAns b {
-    color: #eafff6;
+    color: var(--fg-strong);
   }
   .rightAns .sep {
     margin: 0 0.35rem;
@@ -123,7 +123,7 @@
   .loss {
     font-size: 0.82rem;
     color: var(--danger);
-    border: 1px solid rgba(255, 69, 96, 0.5);
+    border: 1px solid var(--danger-glow);
     padding: 0.1rem 0.5rem;
   }
 
@@ -132,7 +132,7 @@
     line-height: 1.8;
     color: var(--fg);
     padding: 0.65rem 0.8rem;
-    background: rgba(3, 6, 10, 0.7);
+    background: var(--scrim);
     border: 1px dashed var(--line);
   }
   .wh {

@@ -133,7 +133,7 @@
   }
   .nm {
     font-size: 0.82rem;
-    color: #eafff6;
+    color: var(--fg-strong);
     letter-spacing: 0.04em;
   }
   .ds {

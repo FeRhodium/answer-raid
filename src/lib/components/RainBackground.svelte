@@ -2,8 +2,14 @@
   /**
    * 背景:字符雨 + 网格 + 漂移光斑。全部画在 canvas 上,
    * 与档位色相(--hue)同步。页面隐藏时自动停帧。
+   *
+   * `enabled=false`(亮色主题)时整层不渲染 —— 白底上再加字符雨只会降低可读性。
+   * 动画跑在 $effect 里而不是 onMount,这样来回切主题能干净地重建与销毁。
    */
-  import { onMount } from 'svelte';
+  interface Props {
+    enabled?: boolean;
+  }
+  let { enabled = true }: Props = $props();
 
   let canvas: HTMLCanvasElement | undefined = $state();
   let hue = $state(152);
@@ -11,7 +17,8 @@
   const HEX = '0123456789ABCDEF';
   const GLYPHS = '01<>{}[]()/*+-=|&^%$#@!?~;:¥§ΔΣΩλ∴∵≡⊥⊕⊆≠∞';
 
-  onMount(() => {
+  $effect(() => {
+    if (!enabled) return;
     const el = canvas;
     if (!el) return;
     const ctx = el.getContext('2d');
@@ -141,7 +148,7 @@
   });
 </script>
 
-<canvas bind:this={canvas} aria-hidden="true"></canvas>
+<canvas bind:this={canvas} aria-hidden="true" class:hidden={!enabled}></canvas>
 
 <style>
   canvas {
@@ -152,5 +159,8 @@
     z-index: 0;
     pointer-events: none;
     opacity: 0.5;
+  }
+  canvas.hidden {
+    display: none;
   }
 </style>

@@ -2,14 +2,20 @@
 
 /* ============================================================
    CSA · ANSWER RAID —— 设计令牌
-   单色 CRT + 档位色相驱动(--hue 由 JS 按当前难度档位写入)
+   两个维度驱动配色:
+     --hue   档位色相(由 JS 按当前难度写入 :root)
+     --theme 明暗主题(data-theme 写在 <html> 上,由 theme.svelte.ts 托管)
+   所有"深色底/亮色字/强调色上的文字"都收敛成语义令牌,主题只换令牌不碰组件。
    ============================================================ */
 :root {
   --hue: 152;
+
+  /* 暗色(CRT):色相保持满饱和 + 高亮度,深底上才够冲 */
   --accent: hsl(var(--hue) 100% 62%);
   --accent-dim: hsl(var(--hue) 70% 34%);
   --accent-glow: hsl(var(--hue) 100% 62% / 0.45);
   --accent-soft: hsl(var(--hue) 100% 62% / 0.12);
+  --accent-text: hsl(var(--hue) 100% 62%);
 
   --bg: #04060a;
   --bg-2: #070c12;
@@ -20,13 +26,83 @@
   --fg: #d9f6e8;
   --fg-dim: #7d9a8f;
   --fg-mute: #47605a;
+  /* 正文里被强调的片段(比 --fg 更亮一档) */
+  --fg-strong: #eafff6;
+  /* 落在强调色/危险色实心块上的文字 */
+  --on-accent: #04060a;
 
   --danger: #ff4560;
+  --danger-soft: rgba(255, 69, 96, 0.2);
+  --danger-glow: rgba(255, 69, 96, 0.5);
   --warn: #ffc93c;
+  --warn-soft: rgba(255, 201, 60, 0.1);
+  --warn-glow: rgba(255, 201, 60, 0.5);
+
+  /* 方块底:代码块 / 图表 / 输入框 / 键帽 / 二维码 */
+  --code-bg: #03060a;
+  --code-fg: #cdf3e2;
+  --code-glow: hsl(var(--hue) 90% 50% / 0.07);
+  --key-bg: #04070a;
+  --qr-bg: #03060a;
+  /* 半透明遮罩:悬浮控件、晋级幕、结算卡 */
+  --overlay: rgba(4, 6, 10, 0.8);
+  --scrim: rgba(3, 6, 10, 0.62);
+  --track: #05080c;
+
+  --panel-shadow: 0 0 22px var(--accent-glow);
+  --btn-hover-fg: var(--on-accent);
 
   --mono: 'JetBrains Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
   --display: 'Share Tech Mono', var(--mono);
 }
+
+/**
+ * 亮色主题:给强光环境(户外摊位、正午阳光下的手机/笔记本)用。
+ *
+ * 不是把暗色反转那么简单,做了三件必要的调整:
+ * 1) 强调色**降亮度、提饱和** —— 深色底上的 62% 亮度放到白底上会糊成一片;
+ * 2) 正文改用近黑绿而不是纯黑,保留一点 CRT 的调性;面板不透明,避免背景透上来降低对比;
+ * 3) 沿用 --hue 变量,所以三个档位的换色逻辑在亮色下照样生效。
+ */
+[data-theme='light'] {
+  --accent: hsl(var(--hue) 88% 30%);
+  --accent-dim: hsl(var(--hue) 55% 45%);
+  --accent-glow: hsl(var(--hue) 80% 40% / 0.22);
+  --accent-soft: hsl(var(--hue) 80% 45% / 0.14);
+  --accent-text: hsl(var(--hue) 90% 26%);
+
+  --bg: #f4f7f6;
+  --bg-2: #e6ecea;
+  --panel: hsl(var(--hue) 40% 99% / 0.94);
+  --line: hsl(var(--hue) 25% 30% / 0.24);
+  --line-hard: hsl(var(--hue) 45% 30% / 0.55);
+
+  --fg: #0d1c17;
+  --fg-dim: #3d5750;
+  --fg-mute: #5e7a72;
+  --fg-strong: #04120c;
+  --on-accent: #05100b;
+
+  --danger: #c2213c;
+  --danger-soft: rgba(194, 33, 60, 0.12);
+  --danger-glow: rgba(194, 33, 60, 0.3);
+  --warn: #8a6207;
+  --warn-soft: rgba(138, 98, 7, 0.13);
+  --warn-glow: rgba(138, 98, 7, 0.35);
+
+  --code-bg: #ffffff;
+  --code-fg: #10241c;
+  --code-glow: hsl(var(--hue) 60% 45% / 0.06);
+  --key-bg: #ffffff;
+  --qr-bg: #ffffff;
+  --overlay: rgba(252, 254, 253, 0.92);
+  --scrim: rgba(246, 250, 249, 0.86);
+  --track: #dde4e2;
+
+  --panel-shadow: 0 2px 14px hsl(var(--hue) 30% 30% / 0.14);
+  --btn-hover-fg: #ffffff;
+}
+
 
 * {
   box-sizing: border-box;
@@ -53,9 +129,16 @@ body {
   background-attachment: fixed;
 }
 
+/* 亮色下把顶部光晕收得很轻:强光环境里要的是对比,不是氛围 */
+[data-theme='light'] body {
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%, hsl(var(--hue) 70% 60% / 0.1), transparent 70%),
+    linear-gradient(180deg, var(--bg), var(--bg-2));
+}
+
 ::selection {
   background: var(--accent);
-  color: #04060a;
+  color: var(--on-accent);
 }
 
 h1,
@@ -79,11 +162,11 @@ button {
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #05080c;
+  background: var(--track);
 }
 ::-webkit-scrollbar-thumb {
   background: var(--accent-dim);
-  border: 2px solid #05080c;
+  border: 2px solid var(--track);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--accent);
@@ -160,9 +243,9 @@ button {
   z-index: -1;
 }
 .btn:hover:not(:disabled) {
-  color: #04060a;
+  color: var(--btn-hover-fg);
   border-color: var(--accent);
-  box-shadow: 0 0 22px var(--accent-glow);
+  box-shadow: var(--panel-shadow);
 }
 .btn:hover:not(:disabled)::after {
   transform: translateY(0);
@@ -186,8 +269,8 @@ button {
   text-align: center;
   border: 1px solid var(--line-hard);
   border-bottom-width: 2px;
-  background: #04070a;
-  color: var(--accent);
+  background: var(--key-bg);
+  color: var(--accent-text);
   font-size: 0.78em;
 }
 
@@ -206,11 +289,11 @@ button {
   padding: 0.02em 0.32em;
   font-size: 0.93em;
   white-space: nowrap;
-  color: #eafff6;
+  color: var(--fg-strong);
 }
 .rich b,
 .rich strong {
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
 }
 
@@ -218,8 +301,8 @@ pre.code {
   margin: 0;
   padding: 0.95rem 1.05rem;
   background:
-    linear-gradient(90deg, hsl(var(--hue) 90% 50% / 0.07), transparent 40%),
-    #03060a;
+    linear-gradient(90deg, var(--code-glow), transparent 40%),
+    var(--code-bg);
   border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
   overflow-x: auto;
@@ -229,19 +312,19 @@ pre.code {
 }
 pre.code code {
   font-family: var(--mono);
-  color: #cdf3e2;
+  color: var(--code-fg);
   white-space: pre;
 }
 
 pre.chart {
   margin: 0;
   padding: 0.9rem 1.05rem;
-  background: #03060a;
+  background: var(--code-bg);
   border: 1px dashed var(--line);
   overflow-x: auto;
   font-size: 0.82rem;
   line-height: 1.45;
-  color: var(--accent);
+  color: var(--accent-text);
   white-space: pre;
 }
 

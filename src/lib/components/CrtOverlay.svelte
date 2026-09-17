@@ -2,16 +2,20 @@
   /** CRT 叠层:扫描线 + 暗角 + 极轻的闪烁。纯装饰,不吃指针事件。 */
   interface Props {
     intense?: boolean;
+    /** 亮色主题下整层关掉 —— 扫描线和暗角在白底上只会糊成灰雾。 */
+    enabled?: boolean;
   }
-  let { intense = false }: Props = $props();
+  let { intense = false, enabled = true }: Props = $props();
 </script>
 
-<div class="crt" class:on={intense} aria-hidden="true">
-  <div class="scan"></div>
-  <div class="glowline"></div>
-  <div class="vignette"></div>
-  <div class="grain"></div>
-</div>
+{#if enabled}
+  <div class="crt" class:on={intense} aria-hidden="true">
+    <div class="scan"></div>
+    <div class="glowline"></div>
+    <div class="vignette"></div>
+    <div class="grain"></div>
+  </div>
+{/if}
 
 <style>
   .crt {

@@ -106,7 +106,7 @@
     justify-content: center;
     padding: clamp(1rem, 5vw, 4rem);
     cursor: pointer;
-    background: linear-gradient(180deg, rgba(4, 6, 10, 0.9), rgba(4, 6, 10, 0.72));
+    background: linear-gradient(180deg, var(--overlay), var(--overlay));
   }
   .bar {
     display: flex;
