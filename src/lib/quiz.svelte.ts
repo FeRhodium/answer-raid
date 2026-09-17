@@ -2,7 +2,7 @@
  * 答题引擎。使用 Svelte 5 runes($state/$derived)写成 .svelte.ts 模块,
  * 所有组件共享同一个单例 store。
  *
- * 规则:三档递进(入门 → 硬核 → 竞赛),每档答满 5 题晋级,答错扣「不灭次数」,
+ * 规则:五档递进(EZ → HD → IN → AT → SP),每档答满 3 题晋级,答错扣「不灭次数」,
  * 次数归零即出局;题库共 15 题,每局按未出现过的题随机抽取,选项顺序也重新打乱。
  */
 
@@ -14,7 +14,7 @@ import { fmt, msg, t } from './i18n.svelte.ts';
 import * as sound from './audio';
 import { loadSoundPref, pushHistory, saveBest, saveHandle, saveSoundPref } from './storage';
 
-export type Phase = 'boot' | 'intro' | 'playing' | 'feedback' | 'promote' | 'over';
+export type Phase = 'boot' | 'intro' | 'playing' | 'feedback' | 'promote' | 'over' | 'confirm-quit';
 
 export type JokerId = 'fifty' | 'freeze' | 'hint';
 
@@ -76,6 +76,8 @@ interface State {
   seed: number;
   usedIds: string[];
   newBest: boolean;
+  /** 退出确认弹窗弹出前的阶段,取消时回到这里。 */
+  resumeAfterQuit: Phase;
 }
 
 /** 开机自检台词,按当前语言生成(切语言时开场动画会跟着变)。 */
@@ -114,6 +116,7 @@ function freshGame(): State {
     seed: Math.floor(Math.random() * 1e9),
     usedIds: [],
     newBest: false,
+    resumeAfterQuit: 'playing',
   };
 }
 
@@ -151,13 +154,13 @@ export function accuracy(): number {
 
 export function rank(): { t: string; d: string } {
   const s = game.score;
-  const reachedAcm = game.finalTierIndex >= 2 || game.tierIndex >= 2;
+  const reachedSp = game.finalTierIndex >= 4 || game.tierIndex >= 4;
   if (game.cleared && game.correct >= TIERS.length * ROUNDS_PER_TIER) return { t: 'SSS', d: fmt('rank.SSS') };
   if (game.cleared) return { t: 'SS', d: fmt('rank.SS') };
-  if (reachedAcm) return { t: 'S', d: fmt('rank.S') };
-  if (s >= 900) return { t: 'A', d: fmt('rank.A') };
-  if (s >= 400) return { t: 'B', d: fmt('rank.B') };
-  if (s >= 150) return { t: 'C', d: fmt('rank.C') };
+  if (reachedSp) return { t: 'S', d: fmt('rank.S') };
+  if (s >= 4200) return { t: 'A', d: fmt('rank.A') };
+  if (s >= 2000) return { t: 'B', d: fmt('rank.B') };
+  if (s >= 600) return { t: 'C', d: fmt('rank.C') };
   return { t: 'D', d: fmt('rank.D') };
 }
 
@@ -244,7 +247,6 @@ export function answer(index: number): void {
   if (game.phase !== 'playing' || !game.current) return;
   reveal(index, false);
 }
-
 function reveal(index: number, timesUp: boolean): void {
   const cur = game.current;
   if (!cur) return;
@@ -298,7 +300,7 @@ function reveal(index: number, timesUp: boolean): void {
 
 function promote(): void {
   if (game.tierIndex >= TIERS.length - 1) {
-    // 竞赛档答满 5 题:通关。
+    // SP 档答满 3 题:通关。
     finishRun(true);
     return;
   }
@@ -339,6 +341,35 @@ export function retry(): void {
   startRun(game.handle || 'ANON');
 }
 
+/**
+ * 中途退出。
+ * 不直接回标题,而是弹一个确认框 —— 现场是触屏 + 站着操作,误触代价不小。
+ * 弹窗期间**倒计时暂停**(心跳只认 playing),取消时回到原来的阶段。
+ */
+export function requestQuit(): void {
+  if (game.phase !== 'playing' && game.phase !== 'feedback') return;
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+  game.resumeAfterQuit = game.phase;
+  game.phase = 'confirm-quit';
+}
+
+/** 取消退出,回到刚才的阶段。 */
+export function cancelQuit(): void {
+  if (game.phase !== 'confirm-quit') return;
+  game.phase = game.resumeAfterQuit === 'feedback' ? 'feedback' : 'playing';
+  // 只有回到"正在答题"才需要恢复心跳;feedback 阶段本来就靠 advanceTimer 推进
+  if (game.phase === 'playing') startTimer();
+}
+
+/** 确认退出:丢弃本局进度,回到标题页。 */
+export function confirmQuit(): void {
+  if (game.phase !== 'confirm-quit') return;
+  toIntro();
+}
+
 /** 回到标题。 */
 export function toIntro(): void {
   clearTimers();
@@ -351,6 +382,7 @@ export function toIntro(): void {
 }
 
 export function canUseJoker(id: JokerId): boolean {
+  // 退出确认弹窗期间一律禁用,避免"弹窗还开着却把锦囊用掉了"
   if (game.phase !== 'playing' || game.jokersLeft <= 0) return false;
   if (!game.current) return false;
   if (id === 'fifty') return game.eliminated.length === 0;

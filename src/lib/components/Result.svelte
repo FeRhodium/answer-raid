@@ -128,14 +128,13 @@
 
       <h3 class="ph">{t(msg('res.join'))}</h3>
       <div class="join">
-        <div class="qr" aria-hidden="true">
-          {#each ['▛▀▀▀▜', '▌▘▖▐', '▙▄▄▄▟'] as row, i (i)}<span>{row}</span>{/each}
-          <span class="qcap">{t(msg('res.scan'))}</span>
-        </div>
+        <figure class="qrBox">
+          <img class="qrImg" src="./QR.png" alt={t(msg('res.qrAlt'))} />
+          <figcaption class="qcap">{t(msg('res.scan'))}</figcaption>
+        </figure>
         <div class="jtxt">
           <p><Rich text={t(msg('res.club'))} /></p>
           <p class="dim">{t(msg('res.activities'))}</p>
-          <p class="mute"><Rich text={t(msg('res.qrNote'))} /></p>
         </div>
       </div>
 
@@ -347,26 +346,26 @@
     align-items: center;
     flex-wrap: wrap;
   }
-  .qr {
-    display: grid;
-    grid-template-columns: repeat(1, auto);
-    gap: 0.05rem;
+  .qrBox {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     padding: 0.5rem;
     border: 1px solid var(--line-hard);
-    background: var(--code-bg);
-    color: var(--accent);
-    font-size: 1.5rem;
-    line-height: 1;
-    text-align: center;
-    position: relative;
+    /* 二维码必须落在白底上才能被扫出来 —— 暗色主题下代码块底色就是近黑,这里固定用白 */
+    background: #ffffff;
   }
-  .qr span {
+  .qrImg {
     display: block;
+    width: 132px;
+    height: 132px;
+    object-fit: contain;
   }
   .qcap {
     font-size: 0.58rem !important;
     letter-spacing: 0.14em;
-    color: var(--fg-mute);
+    color: #4a5b56;
     margin-top: 0.3rem;
   }
   .jtxt {

@@ -7,7 +7,7 @@ export interface RunRecord {
   score: number;
   /** 本局到达过的最高档位。 */
   tier: TierId;
-  /** 是否通关到 ACM 档并答完。 */
+  /** 是否通关到 SP 档并答完。 */
   cleared: boolean;
   /** 正确率 0~1。 */
   accuracy: number;

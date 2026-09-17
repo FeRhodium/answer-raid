@@ -8,7 +8,7 @@ import type { LocalizedQuestion } from '../types';
 export const noviceQuestions: LocalizedQuestion[] = [
   {
     id: 'novice-1',
-    tier: 'novice',
+    tier: 'hd',
     tags: ['补码', '二进制'],
     answer: 2,
     zh: {
@@ -28,7 +28,7 @@ export const noviceQuestions: LocalizedQuestion[] = [
   },
   {
     id: 'novice-2',
-    tier: 'novice',
+    tier: 'in',
     tags: ['排序', '选择排序'],
     code: `void selectionSort(int a[], int n) {
   for (int i = 0; i < n - 1; i++) {
@@ -57,7 +57,7 @@ export const noviceQuestions: LocalizedQuestion[] = [
   },
   {
     id: 'novice-3',
-    tier: 'novice',
+    tier: 'hd',
     tags: ['Python', 'range'],
     code: `>>> list(range(0, 5, 2))
 [0, 2, 4]
@@ -83,7 +83,7 @@ export const noviceQuestions: LocalizedQuestion[] = [
   },
   {
     id: 'novice-4',
-    tier: 'novice',
+    tier: 'ez',
     tags: ['整除', '取余'],
     code: `>>> 17 // 5, 17 % 5
 (3, 2)
@@ -107,7 +107,7 @@ export const noviceQuestions: LocalizedQuestion[] = [
   },
   {
     id: 'novice-5',
-    tier: 'novice',
+    tier: 'ez',
     tags: ['循环', '累加'],
     code: `int s = 0;
 for (int i = 1; i <= 10; i++) {

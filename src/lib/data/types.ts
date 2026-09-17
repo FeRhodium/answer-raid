@@ -2,7 +2,7 @@
 
 import type { Lang } from '../i18n.svelte.ts';
 
-export type TierId = 'novice' | 'hacker' | 'acm';
+export type TierId = 'ez' | 'hd' | 'in' | 'at' | 'sp';
 
 /** `none` 表示纯文本题;`svg` 时 chartData 是完整 <svg> 源码;`ascii` 时是等宽字符画。 */
 export type ChartKind = 'none' | 'svg' | 'ascii';
@@ -76,7 +76,7 @@ export interface TierMeta {
   id: TierId;
   /** 档位序号,0 起。 */
   index: number;
-  /** 展示用的英文代号(ENTRY / SYSTEMS / ACM),中英文界面通用。 */
+  /** 档位代号本身(EZ / HD / …),中英文界面通用 —— 不翻译。 */
   name: string;
   /** 主题色(HSL 色相统一由 CSS 变量接管,这里只给色相值)。 */
   hue: number;
@@ -91,4 +91,4 @@ export interface TierMeta {
 }
 
 /** 每个档位需答对的题数,答满即晋级。 */
-export const ROUNDS_PER_TIER = 5;
+export const ROUNDS_PER_TIER = 3;

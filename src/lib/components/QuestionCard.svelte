@@ -3,6 +3,7 @@
   import Rich from './Rich.svelte';
   import { game, answer } from '../quiz.svelte';
   import { ROUNDS_PER_TIER } from '../data/types';
+  import { tierMeta } from '../data/tiers';
   import { msg, t, tagLabel } from '../i18n.svelte.ts';
 
   const cur = $derived(game.current);
@@ -33,7 +34,7 @@
 </script>
 
 {#if cur}
-  <article class="qcard panel" class:shake={game.isCorrect === false} style="--tier-hue:{cur.q.tier === 'hacker' ? 45 : cur.q.tier === 'acm' ? 320 : 152}">
+  <article class="qcard panel" class:shake={game.isCorrect === false} style="--tier-hue:{tierMeta(cur.q.tier).hue}">
     <div class="qhead">
       <span class="qno">
         <em>Q</em>{String(game.tierProgress + 1).padStart(2, '0')}

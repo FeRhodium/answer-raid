@@ -55,7 +55,7 @@ ok('boot() 后进入 intro', game.phase === 'intro', game.phase);
 q.startRun('引擎测试');
 ok('startRun 后进入 playing', game.phase === 'playing', game.phase);
 ok('代号已归一化', game.handle === '引擎测试', game.handle);
-ok('档位是入门档', tierLabel(tier()) === '入门档', tierLabel(tier()));
+ok('档位是 EZ 档', tierLabel(tier()) === '轻松', tierLabel(tier()));
 ok('初始分数 0', game.score === 0, String(game.score));
 ok('初始不灭 = 2', game.lives === 2, String(game.lives));
 ok('初始锦囊 = 3', game.jokersLeft === 3, String(game.jokersLeft));
@@ -114,8 +114,8 @@ ok('不灭 2 → 1', game.lives === 1, String(game.lives));
 ok('题目总数已计入', game.answered === 2, String(game.answered));
 
 /* ------------------------------------------------------------------ */
-section('6. 连答 5 题晋级硬核档');
-// 先让本档剩余题目全部答对:当前进度 1,还需 4 题
+section('6. 连答 3 题晋级 HD 档');
+// 先让本档剩余题目全部答对:当前进度 1,还需 2 题
 await waitPhase('playing');
 let guard = 0;
 while (game.tierProgress < ROUNDS_PER_TIER && game.phase !== 'promote' && guard++ < 12) {
@@ -130,37 +130,42 @@ while (game.tierProgress < ROUNDS_PER_TIER && game.phase !== 'promote' && guard+
 }
 ok('触发晋级幕', game.phase === 'promote', `phase=${game.phase} progress=${game.tierProgress}`);
 ok('档位索引前进到 1', game.tierIndex === 1, String(game.tierIndex));
-ok('档位是硬核档', tierLabel(tier()) === '硬核档', tierLabel(tier()));
-ok('晋级后不灭重置为 1', game.lives === 1, String(game.lives));
+ok('档位是 HD 档', tierLabel(tier()) === '进阶', tierLabel(tier()));
+ok('晋级后不灭按新档位重置(HD allowMiss=2)', game.lives === 2, String(game.lives));
 ok('本档进度归零', game.tierProgress === 0, String(game.tierProgress));
 ok('分数保留', game.score > 0, String(game.score));
 ok('连击跨档保留', game.chain >= 1, String(game.chain));
 
-section('7. 硬核档:答错一次即出局');
+section('7. HD 档:不灭=2,所以需要连错两次才出局');
 await waitPhase('playing', 6000);
-ok('晋级后拿到硬核档题目', tierIds('hacker').includes(questionId()), questionId());
-ok('硬核档限时 45s', game.timeLimit === 45, String(game.timeLimit));
+ok('晋级后拿到 HD 档题目', tierIds('hd').includes(questionId()), questionId());
+ok('HD 档限时 35s', game.timeLimit === 35, String(game.timeLimit));
+ok('晋级后不灭重置为 2(HD 档 allowMiss=2)', game.lives === 2, String(game.lives));
 const scoreBeforeDeath = game.score;
-const hkWrong = [0, 1, 2, 3].find((i) => i !== correctIndex());
-q.answer(hkWrong);
-ok('答错后不灭归零', game.lives === 0, String(game.lives));
+// 第一次答错:不灭 2 → 1,还不能出局
+q.answer([0, 1, 2, 3].find((i) => i !== correctIndex()));
+ok('HD 档第一次答错:不灭 2 → 1', game.lives === 1, String(game.lives));
 ok('答错不加分', game.score === scoreBeforeDeath, String(game.score));
+ok('第一次答错后仍在进行中(未出局)', await waitPhase('playing', 6000), game.phase);
+// 第二次答错:不灭 1 → 0,出局
+q.answer([0, 1, 2, 3].find((i) => i !== correctIndex()));
+ok('第二次答错后不灭归零', game.lives === 0, String(game.lives));
 ok('进入结算 over', await waitPhase('over'), game.phase);
 ok('结算未通关', game.cleared === false);
-ok('最终档位记录为硬核档', tierLabel(TIERS[game.finalTierIndex]) === '硬核档', String(game.finalTierIndex));
+ok('最终档位记录为 HD 档', tierLabel(TIERS[game.finalTierIndex]) === '进阶', String(game.finalTierIndex));
 ok('最高连击被记录', game.bestChain >= 1, String(game.bestChain));
 const rankNow = q.rank();
-// 该局:入门档全过(5/5)、硬核档首题出局,得分约 400~900 → 应为 B(有底子)
-ok('评级为 B(过入门档、折在硬核档)', rankNow.t === 'B', `${rankNow.t} / 分数 ${game.score}`);
+// 该局攒了 360 分(远低于 B 档的 2000),也没摸到 SP → D
+ok('评级为 D(360 分,远低于各档门槛)', rankNow.t === 'D', `${rankNow.t} / 分数 ${game.score}`);
 
 /* ------------------------------------------------------------------ */
 section('8. 重开一局:状态完全重置');
 q.retry();
 ok('回到 playing', game.phase === 'playing', game.phase);
 ok('分数清零', game.score === 0, String(game.score));
-ok('不灭回到 2(入门档)', game.lives === 2, String(game.lives));
+ok('不灭回到 2(EZ 档)', game.lives === 2, String(game.lives));
 ok('锦囊回到 3', game.jokersLeft === 3, String(game.jokersLeft));
-ok('档位回到入门档', tierLabel(tier()) === '入门档', tierLabel(tier()));
+ok('档位回到 EZ 档', tierLabel(tier()) === '轻松', tierLabel(tier()));
 ok('连击清零', game.chain === 0, String(game.chain));
 ok('抹除标记清空', game.eliminated.length === 0, String(game.eliminated.length));
 ok('情报清空', game.hint === null, String(game.hint));
@@ -204,7 +209,12 @@ section('9b. i18n:抽题按当前语言本地化');
   ok('[en] 抽到的题是英文题干', !/[\u4e00-\u9fa5]/.test(game.current.q.prompt), game.current.q.prompt.slice(0, 60));
   ok('[en] 题面确实有英文内容', /[a-zA-Z]{4,}/.test(game.current.q.prompt), game.current.q.prompt.slice(0, 40));
   ok('[en] 选项数不变', game.current.q.options.length === zhCount, String(game.current.q.options.length));
-  ok('[en] id 仍是题库里的合法 id', /^(novice|hacker|acm)-\d$/.test(game.current.q.id), game.current.q.id);
+  // 英文界面下抽到的 id 必须是当前档位题库里的合法题(不写死文件名前缀)
+  ok(
+    '[en] id 仍是该档题库里的合法 id',
+    tierIds(game.current.q.tier).includes(game.current.q.id),
+    `${game.current.q.id} (档位 ${game.current.q.tier})`,
+  );
   ok('[en] 正确项下标仍在选项范围内', game.current.answerIndex >= 0 && game.current.answerIndex < zhCount, String(game.current.answerIndex));
   ok('[en] 情报文案是英文', q.canUseJoker('hint') && (q.useJoker('hint'), !/[\u4e00-\u9fa5]/.test(game.hint)), String(game.hint));
   ok('[en] 计分明细是英文', game.lastBreakdown === '' || !/[\u4e00-\u9fa5]/.test(game.lastBreakdown), game.lastBreakdown);
@@ -231,7 +241,7 @@ for (let n = 0; n < 4; n++) {
   await sleep(300);
 }
 console.log(`      抽到的题序 = ${order.join(' → ')}`);
-ok('入门档 5 题互不相同', new Set(order).size === order.length, `dup 出现在 ${order.join(',')}`);
+ok('EZ 档 3 题互不相同', new Set(order).size === order.length, `dup 出现在 ${order.join(',')}`);
 
 /* ------------------------------------------------------------------ */
 section('11. 回到标题');

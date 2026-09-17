@@ -8,7 +8,7 @@ import type { LocalizedQuestion } from '../types';
 export const acmQuestions: LocalizedQuestion[] = [
   {
     id: 'acm-1',
-    tier: 'acm',
+    tier: 'in',
     tags: ['Transformer', '注意力'],
     code: `Attention(Q, K, V) = softmax(Q · Kᵀ / √d) · V`,
     lang: 'text',
@@ -39,7 +39,7 @@ export const acmQuestions: LocalizedQuestion[] = [
   },
   {
     id: 'acm-2',
-    tier: 'acm',
+    tier: 'at',
     tags: ['浮点数', 'IEEE754'],
     code: `single precision (32 bit): 1 + 8 + 23 = 32
 double precision (64 bit): 1 + 11 + 52 = 64
@@ -72,7 +72,7 @@ double precision (64 bit): 1 + 11 + 52 = 64
   },
   {
     id: 'acm-3',
-    tier: 'acm',
+    tier: 'sp',
     tags: ['计算理论', 'NP'],
     answer: 2,
     zh: {
@@ -100,7 +100,7 @@ double precision (64 bit): 1 + 11 + 52 = 64
   },
   {
     id: 'acm-4',
-    tier: 'acm',
+    tier: 'in',
     tags: ['数据结构', '哈希表'],
     answer: 3,
     zh: {
@@ -119,7 +119,7 @@ double precision (64 bit): 1 + 11 + 52 = 64
   },
   {
     id: 'acm-5',
-    tier: 'acm',
+    tier: 'sp',
     tags: ['算法', '双指针'],
     answer: 2,
     zh: {

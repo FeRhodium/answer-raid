@@ -353,8 +353,8 @@ await sleep(60);
 
 section('2. 标题页');
 ok('切换到标题页', has('.intro'));
-ok('展示三个难度档位', $$('.tier').length === 3, `实际 ${$$('.tier').length}`);
-ok('档位文案含入门/硬核/竞赛', ['入门档', '硬核档', '竞赛档'].every((t) => text('.tiers').includes(t)));
+ok('展示五个难度档位', $$('.tier').length === 5, `实际 ${$$('.tier').length}`);
+ok('档位文案含 EZ/HD/IN/AT/SP', ['轻松', '进阶', '深入', '高阶', '特殊'].every((t) => text('.tiers').includes(t)));
 ok('有代号输入框', has('.field input'));
 ok('三个锦囊都列出来了', $$('.jokers li').length === 3, `实际 ${$$('.jokers li').length}`);
 
@@ -375,7 +375,7 @@ await sleep(60);
 ok('进入对局页(HUD 出现)', has('.hud'));
 ok('题目卡渲染', has('.qcard'));
 ok('HUD 显示代号', text('.who').includes('测试员'), text('.who'));
-ok('当前档位是入门档', text('.hud').includes('入门档'), text('.tierChip'));
+ok('当前档位是 EZ 档', text('.hud').includes('轻松'), text('.tierChip'));
 ok('初始分数 0', scoreValue() === 0, String(scoreValue()));
 ok('默认 4 个选项', optionButtons().length === 4, `实际 ${optionButtons().length}`);
 ok('倒计时在走', Number(text('.tnum').replace(/[^\d.]/g, '')) > 0, text('.tnum'));
@@ -390,7 +390,7 @@ ok('抹除了 2 个错误选项', optionButtons().filter((b) => optionState(b) =
   `实际 ${optionButtons().filter((b) => optionState(b) === 'gone').length}`);
 ok('正确选项未被抹除', optionButtons().every((b) => !(optionState(b) === 'gone' && false)));
 
-section('5. 入门档:用掉 2 条不灭后出局(硬核规则)');
+section('5. EZ 档:用掉 2 条不灭后出局');
 
 /** 当前界面 */
 function screen() {
@@ -439,14 +439,14 @@ for (let round = 0; round < 6; round++) {
 }
 ok('累计答错达到允许次数后进入结算页', screen() === 'result', `实际=${screen()}`);
 ok('出局时不灭次数归零', livesLeft() === 0, String(livesLeft()));
-ok('出局前恰好答错 2 次(入门档 allowMiss=2)', wrongCount === 2, String(wrongCount));
-ok('未晋级到硬核档', !text('.heat').includes('3/5'), 'heat 不应显示硬核档满分');
+ok('出局前恰好答错 2 次(EZ 档 allowMiss=2)', wrongCount === 2, String(wrongCount));
+ok('未晋级到 HD 档', !text('.heat').includes('3/3'), 'heat 不应显示 HD 档满分');
 
 section('6. 结算页内容');
 ok('出现结算页', has('.res'));
 ok('显示评级', text('.rt').length === 1, text('.rt'));
 ok('显示得分', /\d/.test(text('.sc')), text('.sc'));
-ok('逐档战绩三条', $$('.heat li').length === 3, `实际 ${$$('.heat li').length}`);
+ok('逐档战绩五条', $$('.heat li').length === 5, `实际 ${$$('.heat li').length}`);
 ok('有「再来一局」按钮', $$('button').some((b) => b.textContent.includes('再来一局')));
 ok('有分享战绩按钮', $$('button').some((b) => b.textContent.includes('分享战绩')));
 const rec = window.localStorage.getItem('csa.raid.best.v1');
@@ -456,7 +456,7 @@ const scoreOnResultScreen = scoreValue();
 ok('存档里的分数与结算页一致', rec && JSON.parse(rec).score === scoreOnResultScreen,
   `${rec} vs ${scoreOnResultScreen}`);
 ok('存档记录了代号', rec && JSON.parse(rec).handle === '测试员', String(rec));
-ok('存档记录了最终档位', rec && JSON.parse(rec).tier === 'novice', String(rec));
+ok('存档记录了最终档位', rec && JSON.parse(rec).tier === 'ez', String(rec));
 
 /** 用标签 chips 反查题目 id —— 每题 tags 唯一,可作为 DOM 身份校验 */
 const domQuestionId = (tierId) => {
@@ -497,11 +497,11 @@ await sleep(150);
 ok('重开后回到对局', screen() === 'question', `界面=${screen()}`);
 ok('分数已重置为 0', scoreValue() === 0, String(scoreValue()));
 ok('锦囊重置为 3', text('.left').startsWith('3/'), text('.left'));
-ok('不灭重置为入门档的 2', livesLeft() === 2, String(livesLeft()));
-ok('档位回到入门档', text('.tierChip').includes('入门'), text('.tierChip'));
+ok('不灭重置为 EZ 档的 2', livesLeft() === 2, String(livesLeft()));
+ok('档位回到 EZ 档', text('.tierChip').includes('轻松'), text('.tierChip'));
 ok('本档进度重置为 0', text('.progTxt').startsWith('0/'), text('.progTxt'));
 ok('题号回到 Q01', text('.qno').includes('01'), text('.qno'));
-ok('主题色相回到入门档 152',
+ok('主题色相回到 EZ 档 152',
   document.documentElement.style.getPropertyValue('--hue').trim() === '152',
   `--hue=${document.documentElement.style.getPropertyValue('--hue')}`);
 
@@ -635,6 +635,50 @@ section('14. 主题切换(暗色 CRT ↔ 亮色强光)');
   await sleep(120);
   ok('切回暗色:data-theme=dark', rootTheme() === 'dark', String(rootTheme()));
   ok('切回暗色:CRT 叠层回来', has('.crt'));
+}
+
+section('15. 中途退出(ESC / 按钮 + 确认弹窗)');
+{
+  const quitBtn = $$('button').find((b) => b.className.includes('quitBtn'));
+  ok('对局中存在退出按钮', !!quitBtn, String(!!quitBtn));
+
+  if (quitBtn) quitBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await sleep(120);
+  ok('点击后弹出确认框', has('.quit'));
+  ok('确认框有取消与确认两个按钮', $$('.quit .btn').length === 2, String($$('.quit .btn').length));
+  ok('确认框展示当前进度', text('.quit .stats').length > 0, text('.quit .stats').slice(0, 40));
+  // 弹窗期间对局仍然留在屏幕上(不是白屏)
+  ok('弹窗盖在对局之上,题目仍在', has('.qcard'));
+
+  const cancelBtn = $$('.quit .btn').find((b) => b.textContent.includes('继续'));
+  if (cancelBtn) cancelBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await sleep(120);
+  ok('点「继续答题」后弹窗关闭', !has('.quit'));
+  ok('取消后仍在对局中', has('.qcard') && !has('.res'));
+
+  // ESC 也能唤起,再按 ESC 收起来
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await sleep(120);
+  ok('按 ESC 弹出确认框', has('.quit'));
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await sleep(120);
+  ok('再按 ESC 收起确认框', !has('.quit'));
+
+  // 确认退出 → 回到标题页,且本局不记入档案
+  const bestBefore = localStorage.getItem('csa.raid.best.v1');
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await sleep(120);
+  const confirmBtn = $$('.quit .btn').find((b) => b.textContent.includes('确认'));
+  ok('找到确认退出按钮', !!confirmBtn, String(!!confirmBtn));
+  if (confirmBtn) confirmBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await sleep(150);
+  ok('确认后回到标题页', has('.intro'), screen());
+  ok('退出后不再显示对局', !has('.qcard') && !has('.res'));
+  ok(
+    '中途退出不写入档案',
+    localStorage.getItem('csa.raid.best.v1') === bestBefore,
+    String(localStorage.getItem('csa.raid.best.v1')),
+  );
 }
 
 /* ---------- 收尾 ---------- */

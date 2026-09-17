@@ -5,12 +5,21 @@ import { noviceQuestions } from './questions/novice';
 import { systemsQuestions } from './questions/systems';
 import { acmQuestions } from './questions/acm';
 
-/** 题库以双语形式保存;真正交给渲染层的是按语言摊平后的 `Question`。 */
-const BANK_SOURCE: Record<TierId, LocalizedQuestion[]> = {
-  novice: noviceQuestions,
-  hacker: systemsQuestions,
-  acm: acmQuestions,
-};
+/** 全部题目(双语)。文件的划分只是"编写时的归类",难度档位由每题自己的 `tier` 决定。 */
+const ALL_SOURCE: LocalizedQuestion[] = [...noviceQuestions, ...systemsQuestions, ...acmQuestions];
+
+/**
+ * 按 `tier` 字段分档。
+ * 刻意**从数据推导**而不是手写映射:改一道题的档位只需要动它自己的 `tier`,
+ * 这里不会漏同步(手写映射曾经就把整档搞空过)。
+ */
+const BANK_SIZE: Record<TierId, LocalizedQuestion[]> = { ez: [], hd: [], in: [], at: [], sp: [] };
+for (const q of ALL_SOURCE) BANK_SIZE[q.tier].push(q);
+
+export const BANK_SOURCE: Record<TierId, LocalizedQuestion[]> = BANK_SIZE;
+
+/** 全部题目(供校验与统计)。 */
+export const ALL_QUESTIONS_SOURCE = ALL_SOURCE;
 
 /** 取某一档位、某一语言的题库。 */
 export function bankFor(tier: TierId, lang: Lang): Question[] {
