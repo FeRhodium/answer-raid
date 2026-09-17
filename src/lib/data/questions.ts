@@ -1,27 +1,31 @@
-import type { Question, TierId } from './types';
+import type { LocalizedQuestion, Question, TierId } from './types';
+import { localizeQuestion } from './types';
+import { locale, t, msg, fmt, tagLabel, type Lang } from '../i18n.svelte.ts';
 import { noviceQuestions } from './questions/novice';
 import { systemsQuestions } from './questions/systems';
 import { acmQuestions } from './questions/acm';
 
-export const BANK: Record<TierId, Question[]> = {
+/** 题库以双语形式保存;真正交给渲染层的是按语言摊平后的 `Question`。 */
+const BANK_SOURCE: Record<TierId, LocalizedQuestion[]> = {
   novice: noviceQuestions,
   hacker: systemsQuestions,
   acm: acmQuestions,
 };
 
-export const ALL_QUESTIONS: Question[] = [
-  ...noviceQuestions,
-  ...systemsQuestions,
-  ...acmQuestions,
-];
+/** 取某一档位、某一语言的题库。 */
+export function bankFor(tier: TierId, lang: Lang): Question[] {
+  return (BANK_SOURCE[tier] ?? []).map((q) => localizeQuestion(q, lang));
+}
 
-/** 一次「抽题」的结果:题目本身 + 打乱后的选项 + 新答案下标。 */
+/** 一次「抽题」的结果:题目本身(已本地化)+ 打乱后的选项 + 新答案下标。 */
 export interface DrawnQuestion {
   q: Question;
   /** 打乱后的展示选项。 */
   options: string[];
   /** 正确项在 options 中的下标。 */
   answerIndex: number;
+  /** 抽题时的语言,便于调试与再本地化。 */
+  lang: Lang;
 }
 
 export function shuffle<T>(input: readonly T[]): T[] {
@@ -36,15 +40,16 @@ export function shuffle<T>(input: readonly T[]): T[] {
 }
 
 /**
- * 抽一道该档位还没在本局出现过的题,并把选项顺序打乱。
+ * 抽一道该档位还没在本局出现过的题,按当前语言本地化,并把选项顺序打乱。
  * 题目耗尽时从该档位重新洗牌(保持可无限重玩),但会尽量避开最近用过的。
  */
 export function drawQuestion(
   tier: TierId,
   usedIds: readonly string[],
 ): DrawnQuestion | null {
-  const pool = BANK[tier];
-  if (!pool || pool.length === 0) return null;
+  const lang = locale();
+  const pool = bankFor(tier, lang);
+  if (pool.length === 0) return null;
 
   const used = new Set(usedIds);
   let candidates = pool.filter((q) => !used.has(q.id));
@@ -61,11 +66,12 @@ export function drawQuestion(
   const options = shuffle(q.options);
   const answerIndex = options.indexOf(correctText);
 
-  return { q, options, answerIndex };
+  return { q, options, answerIndex, lang };
 }
 
-/** 提供给「求助」锦囊的一句话提示:优先用可公开的出处,否则用考点。 */
+/** 提供给「内线情报」锦囊的一句话提示:优先用可公开的出处,否则用考点。 */
 export function hintFor(q: Question): string {
-  if (q.source) return `检测到标签【${q.tags.join(' / ')}】· 出处:${q.source}`;
-  return `检测到考点【${q.tags.join(' / ')}】,回到定义本身推一遍,别信直觉。`;
+  const tags = q.tags.map(tagLabel).join(' / ');
+  if (q.source) return t(msg('hint.source'), { tags, source: q.source });
+  return fmt('hint.tags', { tags });
 }

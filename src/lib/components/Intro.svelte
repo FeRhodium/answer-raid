@@ -3,7 +3,8 @@
   import { fade, fly } from 'svelte/transition';
   import { TIERS } from '../data/tiers';
   import { ROUNDS_PER_TIER } from '../data/types';
-  import { game, startRun, JOKERS_PER_RUN, soundOn, toggleSound, initAudio } from '../quiz.svelte';
+  import { game, startRun, JOKERS_PER_RUN, initAudio, jokers } from '../quiz.svelte';
+  import { msg, t, fmt } from '../i18n.svelte.ts';
   import { loadBest, loadHistory, loadHandle } from '../storage';
 
   const best = loadBest();
@@ -32,9 +33,9 @@
 <div class="intro">
   <header class="head">
     <div class="org" in:fade={{ duration: 260 }}>
-      <span class="chip">计算机协会 · 百团大战</span>
+      <span class="chip">{t(msg('org.chip'))}</span>
       <span class="chip">SVELTE 5 · RUNES</span>
-      <span class="chip">15 题库 · 随机抽题</span>
+      <span class="chip">{t(msg('org.bank'))}</span>
     </div>
 
     <div class="logoWrap">
@@ -48,38 +49,40 @@
       <span class="w2">RAID</span>
     </h1>
     <p class="sub">
-      三档难度 · 五题一晋级 · 答错扣不灭次数 · 通关 <b>ACM 档</b> 才算封神
+      {t(msg('intro.tagline'), { tier: TIERS[2].name })}
     </p>
   </header>
 
   <section class="grid">
     <div class="panel tiers" in:fly={{ y: 22, duration: 420, delay: 60 }}>
-      <h2 class="ph">// 难度档位</h2>
+      <h2 class="ph">{t(msg('intro.tiers'))}</h2>
       <ol>
         {#each TIERS as t, i (t.id)}
           <li style="--tier-hue:{t.hue}" class="tier">
             <span class="idx">{p2(i + 1)}</span>
             <span class="icon">{t.icon}</span>
             <span class="meta">
-              <span class="name">{t.label} · <em>{t.name}</em></span>
-              <span class="desc">{t.desc}</span>
+              <span class="name"
+                >{fmt(`tier.${t.id}.label`)}{#if fmt(`tier.${t.id}.label`) !== t.name} · <em>{t.name}</em>{/if}</span
+              >
+              <span class="desc">{fmt(`tier.${t.id}.desc`)}</span>
             </span>
             <span class="stat">
-              <span>{ROUNDS_PER_TIER} 题</span>
-              <span>{t.timeLimit}s / 题</span>
-              <span>不灭 ×{t.allowMiss}</span>
+              <span>{fmt('intro.nPerTier', { n: ROUNDS_PER_TIER })}</span>
+              <span>{fmt('intro.perQuestion', { s: t.timeLimit })}</span>
+              <span>{fmt('intro.lives', { n: t.allowMiss })}</span>
             </span>
           </li>
         {/each}
       </ol>
       <p class="rule mute">
-        每局从题库中随机抽取未出现过的题目,选项顺序也会重新打乱 —— 背题没用。
+        {t(msg('intro.randomNote'))}
       </p>
     </div>
 
     <div class="rightCol">
       <div class="panel card" in:fly={{ y: 22, duration: 420, delay: 140 }}>
-        <h2 class="ph">// 特工代号</h2>
+        <h2 class="ph">{t(msg('intro.handle'))}</h2>
         <label class="field" class:bad={touched && !ready}>
           <span class="pfx">root@csa:~$</span>
           <input
@@ -89,7 +92,7 @@
               if (e.key === 'Enter' && ready) go();
             }}
             maxlength="14"
-            placeholder="你的名字 / 昵称"
+            placeholder={t(msg('intro.handlePh'))}
             spellcheck="false"
             autocomplete="off"
           />
@@ -97,50 +100,41 @@
         </label>
         <div class="row">
           <button class="btn primary start" onclick={go} disabled={!ready}>
-            ▶ 开始突袭
-          </button>
-          <button
-            class="btn ico"
-            onclick={toggleSound}
-            title={soundOn() ? '静音' : '开启音效'}
-            aria-label="切换音效"
-          >
-            {soundOn() ? '🔊' : '🔇'}
+            {t(msg('intro.start'))}
           </button>
         </div>
         {#if !ready}
-          <p class="warn mute">代号不能为空 —— 输入任意名字即可开始(也会记在榜上)。</p>
+          <p class="warn mute">{t(msg('intro.emptyHandle'))}</p>
         {:else}
-          <p class="go mute">按 <span class="kbd">ENTER</span> 直接开打</p>
+          <p class="go mute">{t(msg('intro.enterHint'))}</p>
         {/if}
       </div>
 
       <div class="panel card" in:fly={{ y: 22, duration: 420, delay: 210 }}>
-        <h2 class="ph">// 装备 · 三个锦囊</h2>
+        <h2 class="ph">{t(msg('intro.jokers'))}</h2>
         <ul class="jokers">
-          <li><span class="jk">⧗</span><b>逻辑切割</b><span class="dim">抹除两个错误选项</span></li>
-          <li><span class="jk">❄</span><b>时间冻结</b><span class="dim">当前题目回补 15 秒</span></li>
-          <li><span class="jk">◈</span><b>内线情报</b><span class="dim">给出考点,该题得分 ×0.4</span></li>
+          {#each jokers() as j (j.id)}
+            <li><span class="jk">{j.glyph}</span><b>{j.name}</b><span class="dim">{j.desc}</span></li>
+          {/each}
         </ul>
         <p class="rule mute">
-          整局只有 <b>{JOKERS_PER_RUN}</b> 次,按 <span class="kbd">1</span
-          ><span class="kbd">2</span><span class="kbd">3</span> 或点击卡牌使用,用完不补。
+          {fmt('intro.jokersNote', { n: JOKERS_PER_RUN })}
         </p>
       </div>
 
       <div class="panel card record" in:fly={{ y: 22, duration: 420, delay: 280 }}>
-        <h2 class="ph">// 档案</h2>
+        <h2 class="ph">{t(msg('intro.archive'))}</h2>
         {#if best}
           <div class="best">
             <div class="bestScore">
-              <span class="mute">历史最高</span>
+              <span class="mute">{t(msg('intro.best'))}</span>
               <b>{best.score.toLocaleString()}</b>
             </div>
             <div class="bestMeta">
               <span>{best.handle}</span>
-              <span class="dim">{best.tier.toUpperCase()} 档</span>
-              <span class="dim">连击 ×{best.combo}</span>
-              <span class="dim">{best.cleared ? '已通关' : '未通关'}</span>
+              <span class="dim">{fmt('intro.tierOf', { tier: best.tier.toUpperCase() })}</span>
+              <span class="dim">{fmt('intro.combo', { n: best.combo })}</span>
+              <span class="dim">{t(msg(best.cleared ? 'intro.cleared' : 'intro.notCleared'))}</span>
             </div>
           </div>
           {#if history.length > 1}
@@ -156,15 +150,15 @@
             </ul>
           {/if}
         {:else}
-          <p class="mute">暂无记录 —— 打完一局就会留下你的痕迹。</p>
+          <p class="mute">{t(msg('intro.noRecord'))}</p>
         {/if}
       </div>
     </div>
   </section>
 
   <footer class="foot mute">
-    <span>键盘: <span class="kbd">A</span><span class="kbd">B</span><span class="kbd">C</span><span class="kbd">D</span> 选项 · <span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span> 锦囊 · <span class="kbd">ENTER</span> 确认</span>
-    <span>Svelte 5 + Vite · 无后端 · 数据存本地</span>
+    <span>{t(msg('intro.footKeys'))}</span>
+    <span>{t(msg('intro.footStack'))}</span>
   </footer>
 </div>
 
@@ -250,10 +244,6 @@
     color: var(--fg-dim);
     font-size: clamp(0.8rem, 2.4vw, 0.98rem);
   }
-  .sub b {
-    color: var(--accent);
-  }
-
   .grid {
     display: grid;
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
@@ -391,10 +381,6 @@
   .start {
     flex: 1;
   }
-  .ico {
-    padding: 0.7em 0.9em;
-    font-size: 1rem;
-  }
   .warn {
     margin: 0.7rem 0 0;
     font-size: 0.76rem;
@@ -434,9 +420,6 @@
     margin: 0.85rem 0 0;
     font-size: 0.76rem;
     line-height: 1.7;
-  }
-  .rule b {
-    color: var(--accent);
   }
 
   .best {

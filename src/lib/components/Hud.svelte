@@ -3,21 +3,22 @@
   import { TIERS } from '../data/tiers';
   import { ROUNDS_PER_TIER } from '../data/types';
   import { game, tier, livePotential, comboFactor } from '../quiz.svelte';
+  import { msg, t, fmt } from '../i18n.svelte.ts';
 
-  const t = $derived(tier());
+  const meta = $derived(tier());
   const pct = $derived(
     game.timeLimit > 0 ? Math.max(0, Math.min(1, game.timeLeft / game.timeLimit)) : 0,
   );
   const danger = $derived(game.timeLeft <= 5);
   const warn = $derived(game.timeLeft <= game.timeLimit * 0.34);
-  const lives = $derived(t.allowMiss);
+  const lives = $derived(meta.allowMiss);
 </script>
 
-<header class="hud panel" style="--tier-hue:{t.hue}">
+<header class="hud panel" style="--tier-hue:{meta.hue}">
   <div class="row1">
     <div class="who">
       <span class="pfx">root@csa:~$</span>
-      <b>{game.handle || 'ANON'}</b>
+      <b>{game.handle || t(msg('hud.anon'))}</b>
     </div>
 
     <div class="tiers">
@@ -41,29 +42,29 @@
 
   <div class="row2">
     <div class="meta">
-      <span class="chip tierChip">{t.label}</span>
-      <span class="progWrap" title="本档晋级进度">
+      <span class="chip tierChip">{fmt(`tier.${meta.id}.label`)}</span>
+      <span class="progWrap" title={t(msg('hud.progressTip'))}>
         {#each Array(ROUNDS_PER_TIER) as _, i (i)}
           <span class="seg" class:on={i < game.tierProgress}></span>
         {/each}
         <span class="progTxt mute">{game.tierProgress}/{ROUNDS_PER_TIER}</span>
       </span>
 
-      <span class="lives" title="不灭次数:答错扣一次,归零出局">
-        <span class="lbl mute">不灭</span>
+      <span class="lives" title={t(msg('hud.livesTip'))}>
+        <span class="lbl mute">{t(msg('hud.lives'))}</span>
         {#each Array(lives) as _, i (i)}
           <span class="life" class:lost={i >= game.lives}>◆</span>
         {/each}
       </span>
 
       <span class="combo" class:hot={game.chain >= 3}>
-        <span class="lbl mute">连击</span>
+        <span class="lbl mute">{t(msg('hud.combo'))}</span>
         <b>×{game.chain}</b>
-        {#if comboFactor() > 1}<em>倍率 {(comboFactor() * 100).toFixed(0)}%</em>{/if}
+        {#if comboFactor() > 1}<em>{fmt('hud.comboRate', { pct: (comboFactor() * 100).toFixed(0) })}</em>{/if}
       </span>
 
-      <span class="pot" title="本题答对可得分(随时间衰减)">
-        <span class="lbl mute">本题</span>
+      <span class="pot" title={t(msg('hud.potTip'))}>
+        <span class="lbl mute">{t(msg('hud.pot'))}</span>
         <b>+{livePotential()}</b>
       </span>
     </div>

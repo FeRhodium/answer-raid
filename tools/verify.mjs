@@ -8,14 +8,41 @@
  * 目的是用一份独立实现去交叉验证「三档递进 + 不灭次数 + 计分」是否自洽。
  */
 
+import { readFileSync } from 'node:fs';
 import { noviceQuestions } from '../src/lib/data/questions/novice.ts';
 import { systemsQuestions } from '../src/lib/data/questions/systems.ts';
 import { acmQuestions } from '../src/lib/data/questions/acm.ts';
+import { localizeQuestion } from '../src/lib/data/types.ts';
+
+/**
+ * 语言清单直接从这个脚本里给出(而不是 import i18n.ts)——
+ * i18n 用了 Svelte 5 runes,而本脚本跑在裸 Node 下,没有 runes 编译器。
+ * 下面的断言会校验「这里列的语言」与「题库实际提供的语言」一致。
+ */
+const LOCALES = ['zh', 'en'];
+
+/** 抽题时会按语言取其中一份文本;这里把双语题摊平成原来的扁平结构(结构字段必须保留)。 */
+const flatten = (q) => ({
+  ...q.zh,
+  id: q.id,
+  tier: q.tier,
+  tags: q.tags,
+  answer: q.answer,
+  code: q.code,
+  lang: q.lang,
+  chartKind: q.chartKind,
+  chartData: q.chartData,
+});
 
 const TIERS = [
-  { id: 'novice', label: '入门档', allowMiss: 2, timeLimit: 30, baseScore: 100, pool: noviceQuestions },
-  { id: 'hacker', label: '硬核档', allowMiss: 1, timeLimit: 45, baseScore: 250, pool: systemsQuestions },
-  { id: 'acm', label: '竞赛档', allowMiss: 1, timeLimit: 60, baseScore: 500, pool: acmQuestions },
+  { id: 'novice', label: '入门档', allowMiss: 2, timeLimit: 30, baseScore: 100, pool: noviceQuestions.map(flatten) },
+  { id: 'hacker', label: '硬核档', allowMiss: 1, timeLimit: 45, baseScore: 250, pool: systemsQuestions.map(flatten) },
+  { id: 'acm', label: '竞赛档', allowMiss: 1, timeLimit: 60, baseScore: 500, pool: acmQuestions.map(flatten) },
+];
+const RAW_TIERS = [
+  { label: '入门档', pool: noviceQuestions },
+  { label: '硬核档', pool: systemsQuestions },
+  { label: '竞赛档', pool: acmQuestions },
 ];
 const ROUNDS_PER_TIER = 5;
 
@@ -101,6 +128,115 @@ ok('存在代码题(≥5 道)', withCode.length >= 5, `实际 ${withCode.length}
 ok('存在纯文本题(≥3 道)', ALL.length - withCode.length >= 3, `实际 ${ALL.length - withCode.length}`);
 ok('代码题都标了 lang', withCode.every((q) => typeof q.lang === 'string' && q.lang.length > 0));
 ok('代码里没有 tab 缩进', withCode.every((q) => !q.code.includes('\t')));
+
+/* ---------------- 1b. 双语(i18n)完整性 ---------------- */
+
+for (const t of RAW_TIERS) {
+  ok(
+    `${t.label} 每题都有 zh 与 en 两份文本`,
+    t.pool.every((q) => q.zh && q.en && typeof q.zh.prompt === 'string' && typeof q.en.prompt === 'string'),
+  );
+  ok(
+    `${t.label} 两种语言的选项个数一致`,
+    t.pool.every((q) => q.zh.options.length === q.en.options.length),
+  );
+  ok(
+    `${t.label} 两种语言都没有空文本`,
+    t.pool.every((q) =>
+      [q.zh, q.en].every(
+        (x) =>
+          x.prompt.trim().length > 0 &&
+          x.explain.trim().length > 0 &&
+          x.options.every((o) => o.trim().length > 0),
+      ),
+    ),
+  );
+  ok(
+    `${t.label} 两种语言各自选项互不重复`,
+    t.pool.every((q) => [q.zh, q.en].every((x) => new Set(x.options).size === x.options.length)),
+  );
+  ok(
+    `${t.label} 英文题面与讲解足够长`,
+    t.pool.every((q) => q.en.prompt.trim().length >= 10 && q.en.explain.trim().length >= 40),
+  );
+  ok(
+    `${t.label} 题面与讲解确实翻译过(英文不与中文雷同)`,
+    t.pool.every((q) => q.en.prompt !== q.zh.prompt && q.en.explain !== q.zh.explain),
+  );
+  ok(
+    `${t.label} 至少有一题的选项被翻译(选项里专有名词可以原样保留)`,
+    t.pool.some((q) => q.en.options.some((o, i) => o !== q.zh.options[i])),
+  );
+}
+
+// 摊平后仍满足结构约束(与上面纯中文时期的断言等价)
+for (const lang of LOCALES) {
+  for (const t of RAW_TIERS) {
+    const pool = t.pool.map((q) => localizeQuestion(q, lang));
+    ok(
+      `${t.label}[${lang}] 摊平后每题 4 选项 / answer 合法 / 选项不重复`,
+      pool.every(
+        (q) =>
+          q.options.length === 4 &&
+          Number.isInteger(q.answer) &&
+          q.answer >= 0 &&
+          q.answer < q.options.length &&
+          new Set(q.options).size === q.options.length,
+      ),
+    );
+  }
+}
+
+// 摊平不会丢字段:可选题材(code / lang / chart*)必须照抄
+for (const lang of LOCALES) {
+  const flat = [...noviceQuestions, ...systemsQuestions, ...acmQuestions].map((q) =>
+    localizeQuestion(q, lang),
+  );
+  ok(
+    `[${lang}] 摊平后 code / chart 字段无丢失`,
+    flat.every((q, i) => {
+      const src = [...noviceQuestions, ...systemsQuestions, ...acmQuestions][i];
+      return q.code === src.code && q.chartKind === src.chartKind && q.chartData === src.chartData;
+    }),
+  );
+  ok(`[${lang}] 摊平后 tier / id 无丢失`, flat.every((q) => q.tier && q.id));
+}
+
+// 中英文字典的 key 必须一一对应
+{
+  const src = readFileSync(new URL('../src/lib/i18n.svelte.ts', import.meta.url), 'utf8');
+  const slice = (from, to) => src.slice(src.indexOf(from), to ? src.indexOf(to) : undefined);
+  const keysOf = (block) => new Set([...block.matchAll(/^\s{4}'([^']+)':/gm)].map((m) => m[1]));
+  const zh = keysOf(slice('  zh: {', '  en: {'));
+  const en = keysOf(slice('  en: {', '\n};'));
+  const missingEn = [...zh].filter((k) => !en.has(k));
+  const missingZh = [...en].filter((k) => !zh.has(k));
+  ok('i18n 字典:每个中文 key 都有英文', missingEn.length === 0, missingEn.join(', '));
+  ok('i18n 字典:每个英文 key 都有中文', missingZh.length === 0, missingZh.join(', '));
+  ok('i18n 字典:key 数量足够(>60)', zh.size > 60, `实际 ${zh.size}`);
+
+  // 每个题目标签都必须有中英两条,否则英文界面会漏出中文
+  const allTags = new Set(RAW_TIERS.flatMap((t) => t.pool.flatMap((q) => q.tags)));
+  const missingTagZh = [...allTags].filter((tag) => !zh.has(`tag.${tag}`));
+  const missingTagEn = [...allTags].filter((tag) => !en.has(`tag.${tag}`));
+  ok(`i18n 字典:全部 ${allTags.size} 个题目标签都有中文条目`, missingTagZh.length === 0, missingTagZh.join(', '));
+  ok('i18n 字典:全部题目标签都有英文条目', missingTagEn.length === 0, missingTagEn.join(', '));
+
+  // 题库提供的语言 与 字典/渲染层支持的语言 必须一致
+  const srcLangs = new Set();
+  for (const t of RAW_TIERS) {
+    for (const q of t.pool) {
+      for (const k of Object.keys(q)) {
+        if (LOCALES.includes(k)) srcLangs.add(k);
+      }
+    }
+  }
+  ok(
+    '题库提供的语言与 LOCALES 一致',
+    LOCALES.every((l) => srcLangs.has(l)) && srcLangs.size === LOCALES.length,
+    `题库:${[...srcLangs].join(',')} / 期望:${LOCALES.join(',')}`,
+  );
+}
 
 /* ------------------------------------------------------------------ */
 section('2. 抽题与选项打乱');

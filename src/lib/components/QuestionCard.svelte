@@ -2,6 +2,8 @@
   /** 题目卡:题面 / 代码 / 图表 / 选项。feedback 阶段自动标出正误。 */
   import Rich from './Rich.svelte';
   import { game, answer } from '../quiz.svelte';
+  import { ROUNDS_PER_TIER } from '../data/types';
+  import { msg, t, tagLabel } from '../i18n.svelte.ts';
 
   const cur = $derived(game.current);
   const locked = $derived(game.phase !== 'playing');
@@ -35,10 +37,10 @@
     <div class="qhead">
       <span class="qno">
         <em>Q</em>{String(game.tierProgress + 1).padStart(2, '0')}
-        <span class="mute">/ 05</span>
+        <span class="mute">/ {String(ROUNDS_PER_TIER).padStart(2, '0')}</span>
       </span>
       <span class="tags">
-        {#each cur.q.tags as tg (tg)}<span class="chip">{tg}</span>{/each}
+        {#each cur.q.tags as tg (tg)}<span class="chip">{tagLabel(tg)}</span>{/each}
       </span>
       {#if game.penalty < 1}
         <span class="chip pen">情报 ×{game.penalty}</span>
@@ -56,7 +58,7 @@
     {/if}
 
     {#if game.hint}
-      <p class="hint"><span class="hk">◈ 内线情报</span>{game.hint}</p>
+      <p class="hint"><span class="hk">{t(msg('hint.panel'))}</span>{game.hint}</p>
     {/if}
 
     <ul class="opts">

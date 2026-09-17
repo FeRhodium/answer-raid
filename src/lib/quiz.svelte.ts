@@ -10,6 +10,7 @@ import type { TierId } from './data/types';
 import { ROUNDS_PER_TIER } from './data/types';
 import { TIERS, tierMeta } from './data/tiers';
 import { drawQuestion, hintFor, type DrawnQuestion } from './data/questions';
+import { fmt, msg, t } from './i18n.svelte.ts';
 import * as sound from './audio';
 import { loadSoundPref, pushHistory, saveBest, saveHandle, saveSoundPref } from './storage';
 
@@ -25,11 +26,17 @@ export interface JokerDef {
   hotkey: string;
 }
 
-export const JOKERS: JokerDef[] = [
-  { id: 'fifty', name: '逻辑切割', glyph: '⧗', desc: '抹除两个错误选项', hotkey: '1' },
-  { id: 'freeze', name: '时间冻结', glyph: '❄', desc: '本档恢复 15 秒', hotkey: '2' },
-  { id: 'hint', name: '内线情报', glyph: '◈', desc: '给出考点,本题得分 ×0.4', hotkey: '3' },
-];
+/**
+ * 锦囊的**展示文案**按当前语言生成 —— 做成函数而不是常量,
+ * 语言切换时模板会重新求值;`id` 与键位与语言无关,不会打断作答状态。
+ */
+export function jokers(): JokerDef[] {
+  return [
+    { id: 'fifty', glyph: '⧗', hotkey: '1', name: fmt('joker.fifty'), desc: fmt('joker.fifty.desc') },
+    { id: 'freeze', glyph: '❄', hotkey: '2', name: fmt('joker.freeze'), desc: fmt('joker.freeze.desc') },
+    { id: 'hint', glyph: '◈', hotkey: '3', name: fmt('joker.hint'), desc: fmt('joker.hint.desc') },
+  ];
+}
 
 export const JOKERS_PER_RUN = 3;
 const FREEZE_SECONDS = 15;
@@ -69,16 +76,12 @@ interface State {
   seed: number;
   usedIds: string[];
   newBest: boolean;
-  bootLines: string[];
 }
 
-const BOOT_LINES = [
-  'CSA-BIOS v3.7 · 计算机协会 · 百团大战特装版',
-  '检测 CPU ................................................. OK',
-  '挂载题库 /dev/csa0 ............................ 15 SECTORS',
-  '难度档位:ENTRY / SYSTEMS / ACM',
-  '警告:本机对「想当然」零容忍。',
-];
+/** 开机自检台词,按当前语言生成(切语言时开场动画会跟着变)。 */
+export function bootLines(): string[] {
+  return ['boot.line1', 'boot.line2', 'boot.line3', 'boot.line4', 'boot.line5'].map((k) => fmt(k));
+}
 
 function freshGame(): State {
   return {
@@ -111,7 +114,6 @@ function freshGame(): State {
     seed: Math.floor(Math.random() * 1e9),
     usedIds: [],
     newBest: false,
-    bootLines: BOOT_LINES,
   };
 }
 
@@ -150,13 +152,13 @@ export function accuracy(): number {
 export function rank(): { t: string; d: string } {
   const s = game.score;
   const reachedAcm = game.finalTierIndex >= 2 || game.tierIndex >= 2;
-  if (game.cleared && game.correct >= TIERS.length * ROUNDS_PER_TIER) return { t: 'SSS', d: '全题无失误 · 封神' };
-  if (game.cleared) return { t: 'SS', d: '通关竞赛档' };
-  if (reachedAcm) return { t: 'S', d: '触及 ACM 领域' };
-  if (s >= 900) return { t: 'A', d: '硬核档站稳了' };
-  if (s >= 400) return { t: 'B', d: '有底子,再冲一把' };
-  if (s >= 150) return { t: 'C', d: '入门已过,底层待补' };
-  return { t: 'D', d: '先来协会补补课' };
+  if (game.cleared && game.correct >= TIERS.length * ROUNDS_PER_TIER) return { t: 'SSS', d: fmt('rank.SSS') };
+  if (game.cleared) return { t: 'SS', d: fmt('rank.SS') };
+  if (reachedAcm) return { t: 'S', d: fmt('rank.S') };
+  if (s >= 900) return { t: 'A', d: fmt('rank.A') };
+  if (s >= 400) return { t: 'B', d: fmt('rank.B') };
+  if (s >= 150) return { t: 'C', d: fmt('rank.C') };
+  return { t: 'D', d: fmt('rank.D') };
 }
 
 function clearTimers(): void {
@@ -267,15 +269,18 @@ function reveal(index: number, timesUp: boolean): void {
     game.tierProgress += 1;
     const comp = Math.round(timeFactor() * 100);
     const comb = Math.round(comboFactor() * 100);
-    game.lastBreakdown = `基础 ${tier().baseScore} × 时间 ${comp}% × 连击 ${comb}%${
-      game.penalty < 1 ? ` × 情报 ${Math.round(game.penalty * 100)}%` : ''
-    }`;
+    game.lastBreakdown = t(msg('score.base'), {
+      base: tier().baseScore,
+      time: comp,
+      combo: comb,
+      penalty: Math.round(game.penalty * 100),
+    });
     sound.sfx('correct');
   } else {
     game.chain = 0;
     game.lives -= 1;
     game.lastGain = 0;
-    game.lastBreakdown = timesUp ? 'TIMEOUT · 判定为未作答' : '误判 · 连击清零';
+    game.lastBreakdown = fmt(timesUp ? 'score.timeout' : 'score.misjudge');
     sound.sfx(timesUp ? 'glitch' : 'wrong');
   }
   game.phase = 'feedback';

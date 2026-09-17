@@ -1,9 +1,10 @@
 <script lang="ts">
   /** 锦囊卡牌栏。整局限用 3 次,键位 1/2/3(由 App 统一路由)。 */
-  import { game, JOKERS, JOKERS_PER_RUN, canUseJoker, useJoker } from '../quiz.svelte';
+  import { game, jokers, JOKERS_PER_RUN, canUseJoker, useJoker, type JokerId } from '../quiz.svelte';
+  import { msg, t } from '../i18n.svelte.ts';
   import { sfx } from '../audio';
 
-  function act(id: (typeof JOKERS)[number]['id']): void {
+  function act(id: JokerId): void {
     if (!canUseJoker(id)) {
       sfx('wrong');
       return;
@@ -11,11 +12,11 @@
     useJoker(id);
   }
 
-  const disabledReason = (id: string): string => {
-    if (game.phase !== 'playing') return '当前不可用';
-    if (game.jokersLeft <= 0) return '锦囊已耗尽';
-    if (id === 'fifty' && game.eliminated.length > 0) return '本题已使用过';
-    if (id === 'hint' && game.hint !== null) return '本题已获得情报';
+  const disabledReason = (id: JokerId): string => {
+    if (game.phase !== 'playing') return t(msg('joker.unavailable'));
+    if (game.jokersLeft <= 0) return t(msg('joker.exhausted'));
+    if (id === 'fifty' && game.eliminated.length > 0) return t(msg('joker.alreadyCut'));
+    if (id === 'hint' && game.hint !== null) return t(msg('joker.alreadyHint'));
     return '';
   };
 </script>
@@ -30,7 +31,7 @@
   </div>
 
   <div class="cards">
-    {#each JOKERS as j (j.id)}
+    {#each jokers() as j (j.id)}
       <button
         class="jcard"
         class:dead={!canUseJoker(j.id)}

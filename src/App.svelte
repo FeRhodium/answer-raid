@@ -14,6 +14,7 @@
   import RainBackground from './lib/components/RainBackground.svelte';
   import CrtOverlay from './lib/components/CrtOverlay.svelte';
   import { game, tier, soundOn, toggleSound, initAudio, answerByKey, jokerByKey, canUseJoker, useJoker } from './lib/quiz.svelte';
+  import { locale, toggleLocale, LANG_SWITCH_LABEL, msg, t } from './lib/i18n.svelte.ts';
   import { sfx } from './lib/audio';
   import { onMount } from 'svelte';
 
@@ -78,7 +79,20 @@
 
 {#if game.phase !== 'boot'}
   <div class="corner">
-    <button class="mini" onclick={toggleSound} title={soundOn() ? '静音' : '开启音效'} aria-label="切换音效">
+    <button
+      class="mini lang"
+      onclick={toggleLocale}
+      title={t(msg('lang.switch'))}
+      aria-label={t(msg('lang.switch'))}
+    >
+      {LANG_SWITCH_LABEL[locale()]}
+    </button>
+    <button
+      class="mini"
+      onclick={toggleSound}
+      title={soundOn() ? t(msg('sound.off')) : t(msg('sound.on'))}
+      aria-label={t(msg('sound.switch'))}
+    >
       {soundOn() ? '🔊' : '🔇'}
     </button>
   </div>
@@ -115,6 +129,8 @@
     top: 0.5rem;
     right: 0.55rem;
     z-index: 95;
+    display: flex;
+    gap: 0.35rem;
   }
   .mini {
     width: 2rem;
@@ -126,6 +142,10 @@
     border: 1px solid var(--line);
     color: var(--fg-dim);
     transition: border-color 0.15s, color 0.15s;
+  }
+  .mini.lang {
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
   }
   .mini:hover {
     border-color: var(--accent);

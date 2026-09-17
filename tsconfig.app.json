@@ -6,6 +6,12 @@
     "module": "esnext",
     "types": ["svelte", "vite/client"],
     "allowArbitraryExtensions": true,
+    /**
+     * 允许写 `./i18n.svelte.ts` 这种显式后缀的导入。
+     * 必须带后缀:不带的话解析器会把 `./i18n.svelte` 当成 Svelte 组件,
+     * 而它其实是个 runes 模块(`.svelte.ts`),两者必须区分开。
+     */
+    "allowImportingTsExtensions": true,
     "noEmit": true,
     /**
      * Typecheck JS in `.svelte` and `.js` files by default.

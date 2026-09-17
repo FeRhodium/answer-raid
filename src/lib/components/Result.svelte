@@ -5,6 +5,8 @@
   import { ROUNDS_PER_TIER } from '../data/types';
   import { game, rank, accuracy, retry, toIntro } from '../quiz.svelte';
   import { loadBest } from '../storage';
+  import { msg, t, fmt } from '../i18n.svelte.ts';
+  import Rich from './Rich.svelte';
   import { sfx } from '../audio';
 
   const best = loadBest();
@@ -28,16 +30,21 @@
   );
 
   const shareText = $derived(
-    `我在【计算机协会·百团大战】ANSWER RAID 拿到 ${game.score.toLocaleString()} 分,` +
-      `评级 ${rank().t}(${rank().d}),答对 ${game.correct}/${game.answered},最高连击 ×${game.bestChain}。` +
-      `你敢来试试吗?`,
+    fmt('res.shareText', {
+      score: game.score,
+      rank: rank().t,
+      rankDesc: rank().d,
+      correct: game.correct,
+      answered: game.answered,
+      combo: game.bestChain,
+    }),
   );
 
   async function share(): Promise<void> {
     sfx('select');
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'ANSWER RAID · 计算机协会', text: shareText });
+        await navigator.share({ title: t(msg('res.shareTitle')), text: shareText });
         return;
       }
       await navigator.clipboard.writeText(shareText);
@@ -61,9 +68,9 @@
     <p class="headline" class:lose={!game.cleared}>{headline}</p>
     <p class="sub mute">
       {#if game.cleared}
-        {game.handle} 通关了全部 {TIERS.length} 个档位 —— 计算机协会正式向你发出邀请。
+        <Rich text={fmt('res.clear', { handle: game.handle, n: TIERS.length })} />
       {:else}
-        连接在 <b>{TIERS[game.finalTierIndex].label}</b> 中断 —— 不灭次数归零。
+        {fmt('res.lost', { tier: fmt(`tier.${TIERS[game.finalTierIndex].id}.label`) })}
       {/if}
     </p>
 
@@ -85,21 +92,21 @@
 
   <section class="cols">
     <div class="panel box" in:fly={{ y: 20, duration: 420, delay: 120 }}>
-      <h3 class="ph">// 战斗日志</h3>
+      <h3 class="ph">{t(msg('res.log'))}</h3>
       <dl class="stats">
-        <div><dt>正确率</dt><dd>{(accuracy() * 100).toFixed(0)}%<em>{game.correct}/{game.answered}</em></dd></div>
-        <div><dt>最高连击</dt><dd>×{game.bestChain}</dd></div>
-        <div><dt>抵达档位</dt><dd class="tiermark">{TIERS[game.finalTierIndex].label}</dd></div>
-        <div><dt>剩余不灭</dt><dd>{Math.max(0, game.lives)}</dd></div>
-        <div><dt>锦囊消耗</dt><dd>{game.jokersUsed.length}/3</dd></div>
-        <div><dt>历史最高</dt><dd>{best ? best.score.toLocaleString() : '—'}</dd></div>
+        <div><dt>{t(msg('res.accuracy'))}</dt><dd>{(accuracy() * 100).toFixed(0)}%<em>{game.correct}/{game.answered}</em></dd></div>
+        <div><dt>{t(msg('res.bestCombo'))}</dt><dd>×{game.bestChain}</dd></div>
+        <div><dt>{t(msg('res.reached'))}</dt><dd class="tiermark">{fmt(`tier.${TIERS[game.finalTierIndex].id}.label`)}</dd></div>
+        <div><dt>{t(msg('res.livesLeft'))}</dt><dd>{Math.max(0, game.lives)}</dd></div>
+        <div><dt>{t(msg('res.jokersUsed'))}</dt><dd>{game.jokersUsed.length}/3</dd></div>
+        <div><dt>{t(msg('res.best'))}</dt><dd>{best ? best.score.toLocaleString() : '—'}</dd></div>
       </dl>
 
-      <h3 class="ph">// 逐档战绩</h3>
+      <h3 class="ph">{t(msg('res.perTier'))}</h3>
       <ul class="heat">
         {#each heat as h (h.t.id)}
           <li style="--th:{h.t.hue}" class:locked={!h.reached}>
-            <span class="hname">{h.t.icon} {h.t.label}</span>
+            <span class="hname">{h.t.icon} {fmt(`tier.${h.t.id}.label`)}</span>
             <span class="cell">
               {#each Array(ROUNDS_PER_TIER) as _, i (i)}
                 <span class="blk" class:on={i < h.filled}></span>
@@ -112,23 +119,23 @@
     </div>
 
     <div class="panel box" in:fly={{ y: 20, duration: 420, delay: 200 }}>
-      <h3 class="ph">// 下一步</h3>
+      <h3 class="ph">{t(msg('res.next'))}</h3>
       <div class="acts">
-        <button class="btn primary" onclick={() => { sfx('select'); retry(); }}>↻ 再来一局</button>
-        <button class="btn" onclick={() => { sfx('blip'); toIntro(); }}>⌂ 返回标题</button>
-        <button class="btn" onclick={share}>{copied ? '✓ 已复制战绩' : '↗ 分享战绩'}</button>
+        <button class="btn primary" onclick={() => { sfx('select'); retry(); }}>{t(msg('res.retry'))}</button>
+        <button class="btn" onclick={() => { sfx('blip'); toIntro(); }}>{t(msg('res.home'))}</button>
+        <button class="btn" onclick={share}>{t(msg(copied ? 'res.copied' : 'res.share'))}</button>
       </div>
 
-      <h3 class="ph">// 加入我们</h3>
+      <h3 class="ph">{t(msg('res.join'))}</h3>
       <div class="join">
         <div class="qr" aria-hidden="true">
           {#each ['▛▀▀▀▜', '▌▘▖▐', '▙▄▄▄▟'] as row, i (i)}<span>{row}</span>{/each}
-          <span class="qcap">SCAN / 扫码</span>
+          <span class="qcap">{t(msg('res.scan'))}</span>
         </div>
         <div class="jtxt">
-          <p><b>计算机协会</b> · 百团大战</p>
-          <p class="dim">算法集训 · 项目实战 · 硬件折腾 · 通宵黑客松</p>
-          <p class="mute">把我换成你们的招新群二维码图片即可 —— <code>src/lib/components/Result.svelte</code> 里的 <code>.qr</code>。</p>
+          <p><Rich text={t(msg('res.club'))} /></p>
+          <p class="dim">{t(msg('res.activities'))}</p>
+          <p class="mute"><Rich text={t(msg('res.qrNote'))} /></p>
         </div>
       </div>
 
@@ -173,9 +180,6 @@
   .sub {
     margin: 0;
     font-size: 0.88rem;
-  }
-  .sub b {
-    color: #eafff6;
   }
 
   .rankRow {
@@ -373,10 +377,11 @@
     margin: 0 0 0.3rem;
     font-size: 0.82rem;
   }
-  .jtxt b {
+  /* Rich 渲染出的 <b> / <code> 是动态内容,svelte 静态分析看不到 —— 用 :global 保住样式 */
+  .jtxt :global(b) {
     color: var(--accent);
   }
-  .jtxt code {
+  .jtxt :global(code) {
     font-family: var(--mono);
     font-size: 0.9em;
     color: #eafff6;

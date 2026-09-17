@@ -27,7 +27,12 @@ const q = await import('../src/lib/quiz.svelte.ts');
 const { game, tier } = q;
 const TIERS = (await import('../src/lib/data/tiers.ts')).TIERS;
 const { ROUNDS_PER_TIER } = await import('../src/lib/data/types.ts');
-const { BANK } = await import('../src/lib/data/questions.ts');
+const { bankFor } = await import('../src/lib/data/questions.ts');
+const { fmt, locale, setLocale } = await import('../src/lib/i18n.svelte.ts');
+
+/** 档位名现在走 i18n 字典(`tier.<id>.label`),不再是 TierMeta 上的字段。 */
+const tierLabel = (meta) => fmt(`tier.${meta.id}.label`);
+const tierIds = (tierId) => bankFor(tierId, locale()).map((x) => x.id);
 
 /** 等到进入指定 phase(引擎里靠 setTimeout 推进) */
 async function waitPhase(phase, timeoutMs = 6000) {
@@ -50,7 +55,7 @@ ok('boot() 后进入 intro', game.phase === 'intro', game.phase);
 q.startRun('引擎测试');
 ok('startRun 后进入 playing', game.phase === 'playing', game.phase);
 ok('代号已归一化', game.handle === '引擎测试', game.handle);
-ok('档位是入门档', tier().label === '入门档', tier().label);
+ok('档位是入门档', tierLabel(tier()) === '入门档', tierLabel(tier()));
 ok('初始分数 0', game.score === 0, String(game.score));
 ok('初始不灭 = 2', game.lives === 2, String(game.lives));
 ok('初始锦囊 = 3', game.jokersLeft === 3, String(game.jokersLeft));
@@ -125,7 +130,7 @@ while (game.tierProgress < ROUNDS_PER_TIER && game.phase !== 'promote' && guard+
 }
 ok('触发晋级幕', game.phase === 'promote', `phase=${game.phase} progress=${game.tierProgress}`);
 ok('档位索引前进到 1', game.tierIndex === 1, String(game.tierIndex));
-ok('档位是硬核档', tier().label === '硬核档', tier().label);
+ok('档位是硬核档', tierLabel(tier()) === '硬核档', tierLabel(tier()));
 ok('晋级后不灭重置为 1', game.lives === 1, String(game.lives));
 ok('本档进度归零', game.tierProgress === 0, String(game.tierProgress));
 ok('分数保留', game.score > 0, String(game.score));
@@ -133,7 +138,7 @@ ok('连击跨档保留', game.chain >= 1, String(game.chain));
 
 section('7. 硬核档:答错一次即出局');
 await waitPhase('playing', 6000);
-ok('晋级后拿到硬核档题目', BANK.hacker.some((x) => x.id === questionId()), questionId());
+ok('晋级后拿到硬核档题目', tierIds('hacker').includes(questionId()), questionId());
 ok('硬核档限时 45s', game.timeLimit === 45, String(game.timeLimit));
 const scoreBeforeDeath = game.score;
 const hkWrong = [0, 1, 2, 3].find((i) => i !== correctIndex());
@@ -142,7 +147,7 @@ ok('答错后不灭归零', game.lives === 0, String(game.lives));
 ok('答错不加分', game.score === scoreBeforeDeath, String(game.score));
 ok('进入结算 over', await waitPhase('over'), game.phase);
 ok('结算未通关', game.cleared === false);
-ok('最终档位记录为硬核档', TIERS[game.finalTierIndex].label === '硬核档', String(game.finalTierIndex));
+ok('最终档位记录为硬核档', tierLabel(TIERS[game.finalTierIndex]) === '硬核档', String(game.finalTierIndex));
 ok('最高连击被记录', game.bestChain >= 1, String(game.bestChain));
 const rankNow = q.rank();
 // 该局:入门档全过(5/5)、硬核档首题出局,得分约 400~900 → 应为 B(有底子)
@@ -155,7 +160,7 @@ ok('回到 playing', game.phase === 'playing', game.phase);
 ok('分数清零', game.score === 0, String(game.score));
 ok('不灭回到 2(入门档)', game.lives === 2, String(game.lives));
 ok('锦囊回到 3', game.jokersLeft === 3, String(game.jokersLeft));
-ok('档位回到入门档', tier().label === '入门档', tier().label);
+ok('档位回到入门档', tierLabel(tier()) === '入门档', tierLabel(tier()));
 ok('连击清零', game.chain === 0, String(game.chain));
 ok('抹除标记清空', game.eliminated.length === 0, String(game.eliminated.length));
 ok('情报清空', game.hint === null, String(game.hint));
@@ -171,6 +176,45 @@ ok('超时视为答错', game.isCorrect === false);
 ok('超时扣命', game.lives === 1, String(game.lives));
 ok('超时不计分', game.score === 0, String(game.score));
 ok('超时明细文案正确', game.lastBreakdown.includes('TIMEOUT'), game.lastBreakdown);
+
+/* ------------------------------------------------------------------ */
+section('9b. i18n:抽题按当前语言本地化');
+{
+  // 中文:题干应含汉字
+  setLocale('zh');
+  q.retry();
+  ok('[zh] 抽到的题是中文题干', /[\u4e00-\u9fa5]/.test(game.current.q.prompt), game.current.q.prompt.slice(0, 40));
+  // 注意:选项**不保证**含汉字 —— 有些题的选项是 `[1, 4, 7]` 这类两种语言通用的字面量。
+  // 所以这里只断言「选项文本与题库里该题的中文选项一致」。
+  {
+    const zhBank = bankFor(game.current.q.tier, 'zh').find((x) => x.id === game.current.q.id);
+    ok(
+      '[zh] 选项取自中文题库',
+      zhBank !== undefined && zhBank.options.every((o) => game.current.q.options.includes(o)),
+      game.current.q.options.join('|'),
+    );
+  }
+  ok('[zh] 情报文案是中文', q.canUseJoker('hint') && (q.useJoker('hint'), /[\u4e00-\u9fa5]/.test(game.hint)), String(game.hint));
+
+  // 英文:同一道题应换成英文文本,且结构(id / 答案下标 / 选项数)完全不变
+  const zhId = game.current.q.id;
+  const zhCount = game.current.q.options.length;
+  setLocale('en');
+  q.retry();
+  ok('[en] 抽到的题是英文题干', !/[\u4e00-\u9fa5]/.test(game.current.q.prompt), game.current.q.prompt.slice(0, 60));
+  ok('[en] 题面确实有英文内容', /[a-zA-Z]{4,}/.test(game.current.q.prompt), game.current.q.prompt.slice(0, 40));
+  ok('[en] 选项数不变', game.current.q.options.length === zhCount, String(game.current.q.options.length));
+  ok('[en] id 仍是题库里的合法 id', /^(novice|hacker|acm)-\d$/.test(game.current.q.id), game.current.q.id);
+  ok('[en] 正确项下标仍在选项范围内', game.current.answerIndex >= 0 && game.current.answerIndex < zhCount, String(game.current.answerIndex));
+  ok('[en] 情报文案是英文', q.canUseJoker('hint') && (q.useJoker('hint'), !/[\u4e00-\u9fa5]/.test(game.hint)), String(game.hint));
+  ok('[en] 计分明细是英文', game.lastBreakdown === '' || !/[\u4e00-\u9fa5]/.test(game.lastBreakdown), game.lastBreakdown);
+
+  // 复位,避免影响后续用例
+  setLocale('zh');
+  q.retry();
+  ok('复位后回到中文题干', /[\u4e00-\u9fa5]/.test(game.current.q.prompt), game.current.q.prompt.slice(0, 30));
+  void zhId;
+}
 
 /* ------------------------------------------------------------------ */
 section('10. 题库不重复抽取(一局内)');

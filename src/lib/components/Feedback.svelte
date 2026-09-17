@@ -3,10 +3,16 @@
   import { fly } from 'svelte/transition';
   import Rich from './Rich.svelte';
   import { game, tier } from '../quiz.svelte';
+  import { ROUNDS_PER_TIER } from '../data/types';
+  import { msg, t, fmt } from '../i18n.svelte.ts';
 
   const cur = $derived(game.current);
   const verdict = $derived(
-    game.timesUp ? 'TIMEOUT' : game.isCorrect ? 'ACCESS GRANTED' : 'ACCESS DENIED',
+    game.timesUp
+      ? 'fb.verdict.timesUp'
+      : game.isCorrect
+        ? 'fb.verdict.granted'
+        : 'fb.verdict.denied',
   );
 </script>
 
@@ -15,11 +21,11 @@
     <div class="top">
       <span class="verdict">
         {#if game.isCorrect}
-          <span class="glyph">✓</span>{verdict}
+          <span class="glyph">✓</span>{t(msg(verdict))}
         {:else if game.timesUp}
-          <span class="glyph">⏱</span>{verdict}
+          <span class="glyph">⏱</span>{t(msg(verdict))}
         {:else}
-          <span class="glyph">✗</span>{verdict}
+          <span class="glyph">✗</span>{t(msg(verdict))}
         {/if}
       </span>
 
@@ -32,20 +38,22 @@
       {#if game.isCorrect}
         <span class="gain">+{game.lastGain}</span>
       {:else}
-        <span class="loss">不灭 −1 · 剩 {Math.max(0, game.lives)}</span>
+        <span class="loss">{fmt('fb.livesLeft', { n: Math.max(0, game.lives) })}</span>
       {/if}
     </div>
 
     <div class="why">
-      <span class="wh">// 原理</span>
+      <span class="wh">{t(msg('fb.why'))}</span>
       <Rich text={cur.q.explain} />
     </div>
 
     <div class="foot">
       <span class="brk mute">{game.lastBreakdown}</span>
-      <span class="tierNow" style="--th:{tier().hue}">{tier().label} · 进度 {game.tierProgress}/5</span>
+      <span class="tierNow" style="--th:{tier().hue}"
+        >{fmt('fb.tierProgress', { tier: fmt(`tier.${tier().id}.label`), n: game.tierProgress })}</span
+      >
       {#if game.chain >= 3}
-        <span class="fire">连击 ×{game.chain} 保持中</span>
+        <span class="fire">{fmt('fb.chainHold', { n: game.chain })}</span>
       {/if}
     </div>
   </section>

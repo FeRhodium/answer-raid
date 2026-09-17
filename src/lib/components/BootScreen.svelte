@@ -1,7 +1,8 @@
 <script lang="ts">
   /** 开机自检序列。全屏、不可跳过——先建立"硬核"预期。 */
   import { onMount } from 'svelte';
-  import { game, boot } from '../quiz.svelte';
+  import { game, boot, bootLines } from '../quiz.svelte';
+  import { msg, t } from '../i18n.svelte.ts';
 
   let shown = $state<string[]>([]);
   let idx = $state(0);
@@ -17,7 +18,7 @@
     }, 1000);
 
     const tick = setInterval(() => {
-      const line = game.bootLines[idx];
+      const line = bootLines()[idx];
       if (line === undefined) {
         clearInterval(tick);
         finished = true;
@@ -40,8 +41,9 @@
 
   function enter(): void {
     if (!finished) {
-      shown = game.bootLines.slice();
-      idx = game.bootLines.length;
+      const lines = bootLines();
+      shown = lines.slice();
+      idx = lines.length;
       finished = true;
       return;
     }
@@ -85,7 +87,7 @@
     {#if finished}
       <div class="line ready">
         <span class="arrow">›</span>
-        <span>系统就绪。按 <b>任意键</b> 载入答题终端 …</span>
+        <span>{t(msg('boot.ready'))}</span>
         <span class="caret">█</span>
       </div>
     {/if}
@@ -149,10 +151,6 @@
   .ready {
     margin-top: 1.2rem;
     color: var(--accent);
-  }
-  .ready b {
-    color: #fff;
-    text-shadow: 0 0 12px var(--accent);
   }
   .hint {
     margin-top: 2.5rem;

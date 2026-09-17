@@ -1,13 +1,14 @@
 import type { TierMeta } from './types';
 
-/** 三个难度档位的元数据。答错允许次数递减,限时递减,基础分递增 —— 越往上越不许犯错。 */
+/**
+ * 三个难度档位的元数据(只管结构与数值,展示文案走 i18n 的 `tier.<id>.label` / `.desc`)。
+ * 答错允许次数递减,限时递减,基础分递增 —— 越往上越不许犯错。
+ */
 export const TIERS: TierMeta[] = [
   {
     id: 'novice',
     index: 0,
     name: 'ENTRY',
-    label: '入门档',
-    desc: '计算机通识 · 会写代码就能答',
     hue: 152,
     accent: '#39ff88',
     icon: '▚',
@@ -19,8 +20,6 @@ export const TIERS: TierMeta[] = [
     id: 'hacker',
     index: 1,
     name: 'SYSTEMS',
-    label: '硬核档',
-    desc: '底层 · 系统 · 并发,不容想当然',
     hue: 45,
     accent: '#ffc93c',
     icon: '◤',
@@ -32,8 +31,6 @@ export const TIERS: TierMeta[] = [
     id: 'acm',
     index: 2,
     name: 'ACM',
-    label: '竞赛档',
-    desc: '算法竞赛终局,答完即封神',
     hue: 320,
     accent: '#ff3ea5',
     icon: '✶',

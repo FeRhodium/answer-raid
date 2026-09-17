@@ -18,7 +18,18 @@ import { acmQuestions } from '../src/lib/data/questions/acm.ts';
  * 确定性随机源:把 Math.random 换成可播种的 PRNG,
  * 测试端用同一个种子「重放」一遍抽题+打乱流程,就能事先算出正确选项下标。
  */
-const POOL = { novice: noviceQuestions, hacker: systemsQuestions, acm: acmQuestions };
+/**
+ * 题库现在是双语的(每题 zh / en 两份文本)。
+ * 冒烟测试在 `?lang=zh` 下运行(见下方 new Window 的 url),
+ * 所以这里取 `zh` 那份来复刻抽题 —— 选项顺序的打乱与语言无关。
+ */
+const POOL = Object.fromEntries(
+  [
+    ['novice', noviceQuestions],
+    ['hacker', systemsQuestions],
+    ['acm', acmQuestions],
+  ].map(([id, list]) => [id, list.map((q) => ({ ...q.zh, id: q.id, answer: q.answer }))]),
+);
 const ROUNDS_PER_TIER = 5;
 let rngState = 0;
 let rngCalls = 0;
@@ -133,7 +144,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /* ---------- 启动 DOM + 执行真实 bundle ---------- */
 const window = new Window({
-  url: 'http://localhost/',
+  // 锁定中文:项目里的可读断言都是中文文案,同时验证「?lang= 覆盖」这条路径
+  url: 'http://localhost/?lang=zh',
   width: 1280,
   height: 900,
   settings: { disableJavaScriptEvaluation: true, disableCSSFileLoading: true },
@@ -510,6 +522,42 @@ if (screen() === 'question') {
     `before=${eliminatedBefore} after=${eliminatedAfter} left=${text('.left')}`);
 } else {
   console.log('      (本局已结束,跳过键盘锦囊检查)');
+}
+
+section('12. i18n:语言切换');
+{
+  const bodyText = () => document.body.textContent ?? '';
+  const langBtn = $$('button').find((b) => b.className.includes('lang'));
+  const jokerNames = () => $$('.jcard .nm').map((e) => e.textContent.trim());
+  /** 当前屏幕是否标题页(标题页才有 "// 难度档位" 这一段) */
+  const onIntro = bodyText().includes('难度档位');
+
+  ok('存在语言切换按钮', !!langBtn, String(!!langBtn));
+  ok('中文界面:语言按钮显示目标语言 EN', langBtn?.textContent.trim() === 'EN', langBtn?.textContent.trim());
+  ok('中文界面:锦囊名是中文', jokerNames().includes('逻辑切割'), jokerNames().join('/'));
+
+  if (langBtn) langBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await sleep(150);
+
+  ok('切到英文:锦囊名变英文', jokerNames().includes('Logic Cut'), jokerNames().join('/'));
+  ok('切到英文:中文锦囊名消失', !jokerNames().includes('逻辑切割'), jokerNames().join('/'));
+  ok('切到英文:语言按钮显示目标语言 中', langBtn?.textContent.trim() === '中', langBtn?.textContent.trim());
+  ok(
+    '语言偏好写入 localStorage',
+    JSON.parse(localStorage.getItem('csa.raid.lang.v1') ?? '""') === 'en',
+    String(localStorage.getItem('csa.raid.lang.v1')),
+  );
+  if (onIntro) ok('切到英文:标题页文案也变英文', bodyText().includes('DIFFICULTY TIERS'), '');
+
+  if (langBtn) langBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await sleep(150);
+
+  ok('再切回中文:锦囊名恢复中文', jokerNames().includes('逻辑切割'), jokerNames().join('/'));
+  ok(
+    '语言偏好写回 localStorage',
+    JSON.parse(localStorage.getItem('csa.raid.lang.v1') ?? '""') === 'zh',
+    String(localStorage.getItem('csa.raid.lang.v1')),
+  );
 }
 
 /* ---------- 收尾 ---------- */

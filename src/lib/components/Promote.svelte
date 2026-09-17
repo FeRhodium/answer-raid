@@ -3,9 +3,10 @@
   import { TIERS } from '../data/tiers';
   import { ROUNDS_PER_TIER } from '../data/types';
   import { game } from '../quiz.svelte';
+  import { msg, t, fmt } from '../i18n.svelte.ts';
   import { onMount } from 'svelte';
 
-  const t = $derived(TIERS[game.tierIndex]);
+  const meta = $derived(TIERS[game.tierIndex]);
   const prev = $derived(TIERS[Math.max(0, game.tierIndex - 1)]);
   let cd = $state(3.4);
 
@@ -16,45 +17,41 @@
     return () => clearInterval(iv);
   });
 
-  const BRIEF: Record<string, string[]> = {
-    hacker: [
-      '警告:本档题目涉及未定义行为、内存布局与硬件语义。',
-      '直觉在这里通常是错的 —— 请从定义与位级事实出发。',
-      '不灭次数重置为 1,答错即出局。',
-    ],
-    acm: [
-      '最终关卡:算法竞赛级别,复杂度与组合计数为主。',
-      '建议在草稿纸上推一遍再作答。',
-      '通过后你将被记录为「封神」候选。',
-    ],
-  };
+  /** 简报文案走 i18n:`promote.<tierId>.1 ~ .3`。 */
+  const brief = $derived([1, 2, 3].map((n) => fmt(`promote.${meta.id}.${n}`)));
 </script>
 
-<div class="promote" style="--th:{t.hue}">
+<div class="promote" style="--th:{meta.hue}">
   <div class="grid" aria-hidden="true"></div>
 
   <div class="box panel">
-    <p class="clear">LEVEL CLEAR · {prev.label} 已攻破</p>
+    <p class="clear">{fmt('promote.cleared', { tier: fmt(`tier.${prev.id}.label`) })}</p>
     <p class="arrow">▼</p>
     <h2 class="newTier">
-      <span class="ic">{t.icon}</span>
-      <span class="nm">{t.label}</span>
-      <span class="en">{t.name}</span>
+      <span class="ic">{meta.icon}</span>
+      <span class="nm">{fmt(`tier.${meta.id}.label`)}</span>
+      {#if fmt(`tier.${meta.id}.label`) !== meta.name}
+        <span class="en">{meta.name}</span>
+      {/if}
     </h2>
-    <p class="desc">{t.desc}</p>
+    <p class="desc">{fmt(`tier.${meta.id}.desc`)}</p>
 
     <ul class="brief">
-      {#each BRIEF[t.id] ?? [] as line, i (i)}
+      {#each brief as line, i (i)}
         <li style="animation-delay:{i * 160}ms"><span class="ar">›</span>{line}</li>
       {/each}
       <li style="animation-delay:480ms">
-        <span class="ar">›</span>本档 {ROUNDS_PER_TIER} 题 · 每题 {t.timeLimit}s · 不灭 ×{t.allowMiss}
+        <span class="ar">›</span>{fmt('promote.meta', {
+          n: ROUNDS_PER_TIER,
+          s: meta.timeLimit,
+          lives: meta.allowMiss,
+        })}
       </li>
     </ul>
 
     <div class="prog">
       <span class="pbar"><span class="pfill" style="transform:scaleX({1 - cd / 3.4})"></span></span>
-      <span class="cd mute">载入下一档 … {cd.toFixed(1)}s</span>
+      <span class="cd mute">{fmt('promote.loading', { s: cd.toFixed(1) })}</span>
     </div>
   </div>
 </div>
