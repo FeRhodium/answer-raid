@@ -38,12 +38,11 @@
   --warn-soft: rgba(255, 201, 60, 0.1);
   --warn-glow: rgba(255, 201, 60, 0.5);
 
-  /* 方块底:代码块 / 图表 / 输入框 / 键帽 / 二维码 */
+  /* 方块底:代码块 / 图表 / 输入框 / 键帽 / 二维码(都走 --code-bg 或 --key-bg) */
   --code-bg: #03060a;
   --code-fg: #cdf3e2;
   --code-glow: hsl(var(--hue) 90% 50% / 0.07);
   --key-bg: #04070a;
-  --qr-bg: #03060a;
   /* 半透明遮罩:悬浮控件、晋级幕、结算卡 */
   --overlay: rgba(4, 6, 10, 0.8);
   --scrim: rgba(3, 6, 10, 0.62);
@@ -94,7 +93,6 @@
   --code-fg: #10241c;
   --code-glow: hsl(var(--hue) 60% 45% / 0.06);
   --key-bg: #ffffff;
-  --qr-bg: #ffffff;
   --overlay: rgba(252, 254, 253, 0.92);
   --scrim: rgba(246, 250, 249, 0.86);
   --track: #dde4e2;
