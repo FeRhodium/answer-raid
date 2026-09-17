@@ -210,12 +210,12 @@
     pointer-events: none;
   }
   .logo.ghost {
-    color: #ff2d55;
+    color: var(--ghost-a);
     opacity: 0.55;
     animation: glitchShift 3.4s infinite steps(2);
   }
   .logo.ghost2 {
-    color: #22d3ee;
+    color: var(--ghost-b);
     opacity: 0.45;
     animation: glitchShift 2.6s infinite reverse steps(2);
   }

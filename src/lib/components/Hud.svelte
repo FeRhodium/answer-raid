@@ -225,7 +225,7 @@
     font-size: 0.9rem;
   }
   .life.lost {
-    color: #2a3a36;
+    color: var(--slot-used);
     text-shadow: none;
   }
   .combo b {
@@ -293,14 +293,14 @@
     background: var(--overlay);
   }
   .timer.warn .tfill {
-    background: linear-gradient(90deg, #7a5a00, var(--warn));
+    background: linear-gradient(90deg, var(--warn-deep), var(--warn));
     box-shadow: 0 0 14px var(--warn-glow);
   }
   .timer.warn .tnum {
     color: var(--warn);
   }
   .timer.danger .tfill {
-    background: linear-gradient(90deg, #6c0d1c, var(--danger));
+    background: linear-gradient(90deg, var(--danger-deep), var(--danger));
     box-shadow: 0 0 18px var(--danger-glow);
   }
   .timer.danger .tnum {

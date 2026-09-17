@@ -50,7 +50,11 @@
     <div class="foot">
       <span class="brk mute">{game.lastBreakdown}</span>
       <span class="tierNow" style="--th:{tier().hue}"
-        >{fmt('fb.tierProgress', { tier: fmt(`tier.${tier().id}.label`), n: game.tierProgress })}</span
+        >{fmt('fb.tierProgress', {
+          tier: fmt(`tier.${tier().id}.label`),
+          n: game.tierProgress,
+          total: ROUNDS_PER_TIER,
+        })}</span
       >
       {#if game.chain >= 3}
         <span class="fire">{fmt('fb.chainHold', { n: game.chain })}</span>

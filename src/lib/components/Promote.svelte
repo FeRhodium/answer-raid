@@ -168,7 +168,7 @@
     display: flex;
     gap: 0.55rem;
     animation: slideIn 0.35s ease-out both;
-    color: #d9f6e8;
+    color: var(--fg);
   }
   .ar {
     color: hsl(var(--th) 100% 62%);

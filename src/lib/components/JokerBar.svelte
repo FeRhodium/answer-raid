@@ -77,7 +77,7 @@
     box-shadow: 0 0 10px var(--accent-glow);
   }
   .slot.used {
-    background: #16211e;
+    background: var(--slot-used);
     box-shadow: none;
   }
   .left {
@@ -107,13 +107,13 @@
     align-items: center;
     padding: 0.45rem 0.6rem;
     text-align: left;
-    background: hsl(var(--hue) 40% 8% / 0.7);
-    border: 1px solid var(--line);
+    background: var(--card-bg);
+    border: 1px solid var(--card-line);
     transition: border-color 0.15s, box-shadow 0.15s, transform 0.08s, background 0.15s;
   }
   .jcard:hover:not(.dead) {
     border-color: var(--accent);
-    box-shadow: 0 0 22px hsl(var(--hue) 100% 60% / 0.22), inset 0 0 24px hsl(var(--hue) 100% 60% / 0.1);
+    box-shadow: 0 0 22px var(--card-glow), inset 0 0 24px var(--card-glow);
     transform: translateY(-2px);
   }
   .jcard:active:not(.dead) {
@@ -129,7 +129,7 @@
     font-size: 1.35rem;
     color: var(--accent);
     text-align: center;
-    text-shadow: 0 0 14px var(--accent-glow);
+    text-shadow: var(--glyph-glow);
   }
   .nm {
     font-size: 0.82rem;

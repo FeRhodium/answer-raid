@@ -20,7 +20,13 @@
 
       <ul class="stats">
         <li>
-          <span class="k">{fmt('fb.tierProgress', { tier: fmt(`tier.${curTier.id}.label`), n: game.tierProgress })}</span>
+          <span class="k"
+            >{fmt('fb.tierProgress', {
+              tier: fmt(`tier.${curTier.id}.label`),
+              n: game.tierProgress,
+              total: ROUNDS_PER_TIER,
+            })}</span
+          >
         </li>
         <li><span class="k">SCORE</span><b>{game.score.toLocaleString()}</b></li>
         <li><span class="k">{fmt('intro.nPerTier', { n: ROUNDS_PER_TIER })}</span><b>{game.correct}/{game.answered}</b></li>

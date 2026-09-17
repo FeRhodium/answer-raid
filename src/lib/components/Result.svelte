@@ -365,7 +365,7 @@
   .qcap {
     font-size: 0.58rem !important;
     letter-spacing: 0.14em;
-    color: #4a5b56;
+    color: #4a5b56; /* 二维码白底上的固定深灰 */
     margin-top: 0.3rem;
   }
   .jtxt {

@@ -235,6 +235,11 @@ for (const lang of LOCALES) {
   ok(`i18n 字典:全部 ${allTags.size} 个题目标签都有中文条目`, missingTagZh.length === 0, missingTagZh.join(', '));
   ok('i18n 字典:全部题目标签都有英文条目', missingTagEn.length === 0, missingTagEn.join(', '));
 
+  // 「进度 n/N」里的分母必须来自 ROUNDS_PER_TIER,不能写死。
+  // (改档位题数时写死的 /5 不会报错,只会在界面上默默显示错的分母)
+  const hardcoded = [...src.matchAll(/p\.n\}\s*\/\s*\d/g)].map((m) => m[0]);
+  ok('i18n 字典:进度分母没有写死(用 p.total)', hardcoded.length === 0, hardcoded.join(', '));
+
   // 题库提供的语言 与 字典/渲染层支持的语言 必须一致
   const srcLangs = new Set();
   for (const t of RAW_TIERS) {

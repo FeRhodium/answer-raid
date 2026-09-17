@@ -93,30 +93,51 @@ section('3. 组件里没有残留的硬编码暗色');
   };
   walk(dir);
 
-  // 只允许出现在 app.css 的令牌定义里
-  const BAD = [
-    { re: /#04060a/gi, what: '暗色底/近黑字' },
-    { re: /#03060a/gi, what: '代码块暗底' },
-    { re: /#05080c/gi, what: '滚动条暗底' },
-    { re: /#070c12/gi, what: '暗色次级底' },
-    { re: /#eafff6/gi, what: '暗色下才可读的亮字' },
-    { re: /#cdf3e2/gi, what: '暗色下才可读的代码字' },
-    { re: /rgba\(4,\s*6,\s*10/gi, what: '暗色遮罩' },
-  ];
+  // 明确列出的历史遗留值(曾经漏改过的)
+  const NAMED = ['#04060a', '#03060a', '#05080c', '#070c12', '#eafff6', '#cdf3e2'];
+  // 通用启发式:任何 RGB 三个通道都 < 0x40 的深色,在白底上都是"暗斑"
+  // (这一条才是关键 —— 之前硬编码 #16211e 就是靠人工列名单漏掉的)
+  const isDarkHex = (hex) => {
+    const h = hex.slice(1);
+    const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+    return r < 0x40 && g < 0x40 && b < 0x40;
+  };
+
   const offenders = [];
   for (const f of files) {
     const src = readFileSync(f, 'utf8');
     const isTokenFile = f.endsWith('app.css');
-    for (const { re, what } of BAD) {
-      for (const m of src.matchAll(re)) {
-        // app.css 里只允许在令牌定义行出现
-        const line = src.slice(src.lastIndexOf('\n', m.index) + 1, src.indexOf('\n', m.index));
-        if (isTokenFile && /^\s*--[a-z0-9-]+:/.test(line)) continue;
-        offenders.push(`${f.replace(root, '')} → ${what}`);
+    const lines = src.split('\n');
+    lines.forEach((line, i) => {
+      // 标了 "固定色" 注释的行是刻意为之(比如二维码必须落在白底上),跳过
+      if (line.includes('固定色')) return;
+      // mask-image 里的 #000 只是"全不透明"的遮罩,与配色无关
+      if (/mask(-image)?\s*:/.test(line)) return;
+      const isTokenDef = /^\s*--[a-z0-9-]+:/.test(line);
+      for (const m of line.matchAll(/#[0-9a-fA-F]{3,6}\b/g)) {
+        const hex = m[0].toLowerCase();
+        if (isTokenFile && isTokenDef) continue;
+        if (!NAMED.includes(hex) && !isDarkHex(hex)) continue;
+        offenders.push(`${f.replace(root + '\\', '')}:${i + 1} ${hex}`);
       }
-    }
+    });
   }
-  ok('组件里没有硬编码的暗色', offenders.length === 0, offenders.slice(0, 6).join(' | '));
+  ok('组件里没有硬编码的暗色(含通用深色启发式)', offenders.length === 0, offenders.slice(0, 8).join(' | '));
+
+  // 同理:组件里的 hsl() 不该自带很低的亮度 —— 那种底在亮色主题下就是黑块
+  const darkHsl = [];
+  for (const f of files) {
+    if (f.endsWith('app.css')) continue; // 令牌定义里当然有深色
+    const src = readFileSync(f, 'utf8');
+    src.split('\n').forEach((line, i) => {
+      if (line.includes('固定色')) return;
+      for (const m of line.matchAll(/hsl\([^)]*?\b(\d{1,3})%\s*\)/g)) {
+        if (Number(m[1]) < 30) darkHsl.push(`${f.replace(root + '\\', '')}:${i + 1} ${m[0]}`);
+      }
+    });
+  }
+  ok('组件里没有低亮度的 hsl() 背景', darkHsl.length === 0, darkHsl.slice(0, 6).join(' | '));
 }
 
 section('4. 首帧不闪暗色(预置主题脚本)');

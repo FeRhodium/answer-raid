@@ -34,9 +34,22 @@
   --danger: #ff4560;
   --danger-soft: rgba(255, 69, 96, 0.2);
   --danger-glow: rgba(255, 69, 96, 0.5);
+  /* 计时条渐变的深端(亮色下要反过来变浅) */
+  --danger-deep: #6c0d1c;
   --warn: #ffc93c;
   --warn-soft: rgba(255, 201, 60, 0.1);
   --warn-glow: rgba(255, 201, 60, 0.5);
+  --warn-deep: #7a5a00;
+
+  /* 锦囊卡:比面板再深一档的底,以及"已用"槽位的暗块 */
+  --card-bg: hsl(var(--hue) 40% 8% / 0.7);
+  --card-line: var(--line);
+  --card-glow: hsl(var(--hue) 100% 60% / 0.22);
+  --glyph-glow: 0 0 14px var(--accent-glow);
+  --slot-used: #2a3a36;
+  /* 标题 logo 的 glitch 重影(亮色下要压深,否则在白底上糊掉) */
+  --ghost-a: #ff2d55;
+  --ghost-b: #22d3ee;
 
   /* 方块底:代码块 / 图表 / 输入框 / 键帽 / 二维码(都走 --code-bg 或 --key-bg) */
   --code-bg: #03060a;
@@ -85,9 +98,21 @@
   --danger: #c2213c;
   --danger-soft: rgba(194, 33, 60, 0.12);
   --danger-glow: rgba(194, 33, 60, 0.3);
+  --danger-deep: #e79aa6;
   --warn: #8a6207;
   --warn-soft: rgba(138, 98, 7, 0.13);
   --warn-glow: rgba(138, 98, 7, 0.35);
+  --warn-deep: #d8c489;
+
+  /* 亮色下锦囊卡:页面本身就是近白,卡再半透明就"糊"在一起了 ——
+     所以用纯白卡面 + 更实的描边 + 投影把层次做出来,而不是靠深底 */
+  --card-bg: #ffffff;
+  --card-line: hsl(var(--hue) 30% 35% / 0.34);
+  --card-glow: none;
+  --glyph-glow: none;
+  --slot-used: #bcc7c4;
+  --ghost-a: #c2103a;
+  --ghost-b: #0e7f96;
 
   --code-bg: #ffffff;
   --code-fg: #10241c;

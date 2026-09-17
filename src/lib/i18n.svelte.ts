@@ -179,7 +179,7 @@ const DICT: Record<Lang, Record<string, Message>> = {
     'fb.why': '// 原理',
     'fb.livesLeft': Msg((p) => `不灭 −1 · 剩 ${p.n}`),
     'fb.chainHold': Msg((p) => `连击 ×${p.n} 保持中`),
-    'fb.tierProgress': Msg((p) => `${p.tier} · 进度 ${p.n}/5`),
+    'fb.tierProgress': Msg((p) => `${p.tier} · 进度 ${p.n}/${p.total}`),
 
     'score.base': Msg(
       (p) =>
@@ -356,7 +356,7 @@ const DICT: Record<Lang, Record<string, Message>> = {
     'fb.why': '// WHY',
     'fb.livesLeft': Msg((p) => `Lives −1 · ${p.n} left`),
     'fb.chainHold': Msg((p) => `Combo ×${p.n} still alive`),
-    'fb.tierProgress': Msg((p) => `${p.tier} · progress ${p.n}/5`),
+    'fb.tierProgress': Msg((p) => `${p.tier} · progress ${p.n}/${p.total}`),
 
     'score.base': Msg(
       (p) =>
