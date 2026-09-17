@@ -4,7 +4,7 @@
   import { TIERS } from '../data/tiers';
   import { ROUNDS_PER_TIER } from '../data/types';
   import { game, startRun, JOKERS_PER_RUN, initAudio, jokers } from '../quiz.svelte';
-  import { msg, t, fmt, locale, setLocale, LOCALES, LANG_LABEL } from '../i18n.svelte.ts';
+  import { msg, t, fmt } from '../i18n.svelte.ts';
   import { loadBest, loadHistory, loadHandle } from '../storage';
 
   const best = loadBest();
@@ -36,19 +36,6 @@
       <span class="chip">{t(msg('org.chip'))}</span>
       <span class="chip">SVELTE 5 · RUNES</span>
       <span class="chip">{t(msg('org.bank'))}</span>
-      <span class="langSwitch" role="group" aria-label={t(msg('lang.switch'))}>
-        {#each LOCALES as l (l)}
-          <button
-            class="lsBtn"
-            class:on={locale() === l}
-            onclick={() => setLocale(l)}
-            aria-pressed={locale() === l}
-            title={LANG_LABEL[l]}
-          >
-            {LANG_LABEL[l]}
-          </button>
-        {/each}
-      </span>
     </div>
 
     <div class="logoWrap">
@@ -195,34 +182,7 @@
     flex-wrap: wrap;
     gap: 0.5rem;
     justify-content: center;
-    align-items: center;
     margin-bottom: 1rem;
-  }
-
-  /* 标题页上的语言开关:做成一段明确的分段控件,而不是角落里一个看不出用途的字母 */
-  .langSwitch {
-    display: inline-flex;
-    border: 1px solid var(--line);
-    background: rgba(3, 6, 10, 0.7);
-    margin-left: 0.3rem;
-  }
-  .lsBtn {
-    padding: 0.22rem 0.7rem;
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.06em;
-    color: var(--fg-mute);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition: color 0.15s, background 0.15s;
-  }
-  .lsBtn:hover {
-    color: var(--accent);
-  }
-  .lsBtn.on {
-    color: #04060a;
-    background: var(--accent);
   }
 
   .logoWrap {

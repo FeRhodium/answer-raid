@@ -88,12 +88,14 @@
       <span class="globe" aria-hidden="true">🌐</span>{LANG_SWITCH_LABEL[locale()]}
     </button>
     <button
-      class="mini"
+      class="mini snd"
+      class:off={!soundOn()}
       onclick={toggleSound}
       title={soundOn() ? t(msg('sound.off')) : t(msg('sound.on'))}
       aria-label={t(msg('sound.switch'))}
+      aria-pressed={soundOn()}
     >
-      {soundOn() ? '🔊' : '🔇'}
+      {soundOn() ? '🔊' : '🔇'}{#if !soundOn()}<span class="offMark" aria-hidden="true"></span>{/if}
     </button>
   </div>
 {/if}
@@ -158,6 +160,22 @@
   .mini.lang .globe {
     font-size: 0.8rem;
     line-height: 1;
+  }
+  /* 静音态:除了换图标,再压一层红杠 + 降透明度,避免"看不出点没点上" */
+  .mini.snd {
+    position: relative;
+  }
+  .mini.snd.off {
+    opacity: 0.75;
+  }
+  .mini.snd .offMark {
+    position: absolute;
+    left: 0.35rem;
+    right: 0.35rem;
+    top: 50%;
+    height: 1.5px;
+    background: var(--danger);
+    transform: rotate(-45deg);
   }
   .mini:hover {
     border-color: var(--accent);

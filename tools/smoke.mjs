@@ -548,13 +548,11 @@ if (screen() === 'question') {
 
 section('12. i18n:语言切换');
 {
-  const bodyText = () => document.body.textContent ?? '';
-  const langBtn = $$('button').find((b) => b.className.includes('lang'));
+  const langBtn = $('.mini.lang');
   const jokerNames = () => $$('.jcard .nm').map((e) => e.textContent.trim());
-  /** 当前屏幕是否标题页(标题页才有 "// 难度档位" 这一段) */
-  const onIntro = bodyText().includes('难度档位');
 
   ok('存在语言切换按钮', !!langBtn, String(!!langBtn));
+  ok('标题页顶部不再放语言滑动条', !has('.langSwitch'));
   ok('中文界面:语言按钮带地球图标且指向 EN', langBtn?.textContent.includes('🌐') && langBtn?.textContent.includes('EN'), langBtn?.textContent.trim());
   ok('中文界面:锦囊名是中文', jokerNames().includes('逻辑切割'), jokerNames().join('/'));
 
@@ -569,7 +567,6 @@ section('12. i18n:语言切换');
     JSON.parse(localStorage.getItem('csa.raid.lang.v1') ?? '""') === 'en',
     String(localStorage.getItem('csa.raid.lang.v1')),
   );
-  if (onIntro) ok('切到英文:标题页文案也变英文', bodyText().includes('DIFFICULTY TIERS'), '');
 
   if (langBtn) langBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   await sleep(150);
@@ -580,6 +577,30 @@ section('12. i18n:语言切换');
     JSON.parse(localStorage.getItem('csa.raid.lang.v1') ?? '""') === 'zh',
     String(localStorage.getItem('csa.raid.lang.v1')),
   );
+}
+
+section('13. 静音按钮');
+{
+  const soundBtn = $$('button').find((b) => b.className.includes('mini') && !b.className.includes('lang'));
+  ok('存在静音按钮', !!soundBtn, String(!!soundBtn));
+  const before = soundBtn?.textContent.trim();
+  ok('静音按钮有图标', before === '🔊' || before === '🔇', before);
+
+  if (soundBtn) soundBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await sleep(120);
+  const after = soundBtn?.textContent.trim();
+  ok('点击后图标变化', after !== before, `${before} → ${after}`);
+  ok('图标是另一个状态', after === '🔇' || after === '🔊', after);
+  ok(
+    '静音偏好写入 localStorage',
+    localStorage.getItem('csa.raid.sound.v1') !== null,
+    String(localStorage.getItem('csa.raid.sound.v1')),
+  );
+
+  // 再点回去,别把状态留在静音
+  if (soundBtn) soundBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await sleep(120);
+  ok('再点一次恢复原图标', soundBtn?.textContent.trim() === before, `${soundBtn?.textContent.trim()} vs ${before}`);
 }
 
 /* ---------- 收尾 ---------- */

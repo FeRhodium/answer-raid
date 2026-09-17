@@ -405,9 +405,22 @@ export function answerByKey(key: string): boolean {
   return true;
 }
 
+/**
+ * 声音开关的**响应式**镜像。
+ *
+ * `audio.ts` 是普通模块,它的 `enabled` 是个普通变量 —— Svelte 追踪不到它。
+ * 如果模板直接写 `soundOn()`,`toggleSound()` 改了值界面却不会重渲染:
+ * 按钮看上去「点不动」(状态与 localStorage 其实都变了)。
+ * 所以这里用 $state 同步一份,让图标能随开关变化。
+ */
+let soundState = $state({ on: sound.isSoundEnabled() });
+
 export function soundOn(): boolean {
-  return sound.isSoundEnabled();
+  return soundState.on;
 }
+
+let audioInited = false;
+let audioUnlockArmed = false;
 
 /**
  * 初始化音频:**只读取静音偏好**,不在这里创建 AudioContext。
@@ -415,10 +428,13 @@ export function soundOn(): boolean {
  * 否则会得到一个永远 suspended 的上下文 —— 底噪按钮亮着却没有任何声音。
  * 这里挂一个一次性的手势监听,由 `unlockAudio()` 完成创建与 resume。
  */
-let audioUnlockArmed = false;
-
 export function initAudio(): void {
-  sound.setSoundEnabled(loadSoundPref());
+  if (!audioInited) {
+    audioInited = true;
+    // 每次调用都重读偏好会覆盖用户刚点的静音,所以只在首次读一次
+    sound.setSoundEnabled(loadSoundPref());
+    soundState.on = sound.isSoundEnabled();
+  }
   if (typeof window === 'undefined' || audioUnlockArmed) return;
   audioUnlockArmed = true;
   const unlock = (): void => {
@@ -433,6 +449,7 @@ export function initAudio(): void {
 export function toggleSound(): void {
   const next = !sound.isSoundEnabled();
   sound.setSoundEnabled(next);
+  soundState.on = next;
   saveSoundPref(next);
   if (next && game.phase === 'playing') sound.startAmbient();
 }
