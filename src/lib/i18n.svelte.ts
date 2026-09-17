@@ -487,13 +487,14 @@ export function fmt(key: string, params: Record<string, unknown> = {}): string {
 /**
  * 题目标签(如「补码」「大模型」)的本地化。
  * tags 本身是**数据**(写死在题目里的中文键),展示时统一走字典的 `tag.*` 命名空间。
- * 万一漏译,英文界面下会带上一个 `!` 标记 —— 宁可难看,也不要静默地把中文混进英文界面
- * (`pnpm test:bank` 会检查每个标签都有翻译,所以正常情况下看不到这个标记)。
+ *
+ * 缺条目时回退成 key 本身 —— 也就是原样的中文。**刻意不加 `!` 之类的标记**:
+ * `Python` / `Transformer` / `Web` / `GPT` / `NP` 这些标签的正确中英形式本来就一样,
+ * 判定"是否翻译过"不能靠"值等不等于 key",否则会把这些标签污名化成 `Python!`。
+ * 漏译由 `pnpm test:bank` 检查(它比对的是 **zh 与 en 两份取值是否雷同**)。
  */
 export function tagLabel(tag: string): string {
-  const label = fmt(`tag.${tag}`);
-  if (state.lang !== 'zh' && label === tag) return `${tag}!`;
-  return label;
+  return fmt(`tag.${tag}`);
 }
 
 /** 按当前语言把一组候选拼成 A / B · C 这种列表。 */

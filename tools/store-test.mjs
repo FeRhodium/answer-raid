@@ -27,8 +27,8 @@ const q = await import('../src/lib/quiz.svelte.ts');
 const { game, tier } = q;
 const TIERS = (await import('../src/lib/data/tiers.ts')).TIERS;
 const { ROUNDS_PER_TIER } = await import('../src/lib/data/types.ts');
-const { bankFor } = await import('../src/lib/data/questions.ts');
-const { fmt, locale, setLocale } = await import('../src/lib/i18n.svelte.ts');
+const { bankFor, drawQuestion } = await import('../src/lib/data/questions.ts');
+const { fmt, locale, setLocale, tagLabel } = await import('../src/lib/i18n.svelte.ts');
 
 /** 档位名现在走 i18n 字典(`tier.<id>.label`),不再是 TierMeta 上的字段。 */
 const tierLabel = (meta) => fmt(`tier.${meta.id}.label`);
@@ -224,6 +224,57 @@ section('9b. i18n:抽题按当前语言本地化');
   q.retry();
   ok('复位后回到中文题干', /[\u4e00-\u9fa5]/.test(game.current.q.prompt), game.current.q.prompt.slice(0, 30));
   void zhId;
+}
+
+/* ------------------------------------------------------------------ */
+section('9c. i18n:全题库逐题核对(不只是抽到的那一道)');
+{
+  const CJK = /[\u4e00-\u9fa5]/;
+  const TIER_IDS = TIERS.map((x) => x.id);
+  /** 反复抽题,把某档某语言下的每题文本都收集齐 */
+  const sweep = (tierId, lang) => {
+    setLocale(lang);
+    const seen = new Map();
+    for (let i = 0; i < 400 && seen.size < ROUNDS_PER_TIER; i++) {
+      const d = drawQuestion(tierId, []);
+      if (!d) break;
+      if (!seen.has(d.q.id)) seen.set(d.q.id, d.q);
+    }
+    return seen;
+  };
+
+  let checked = 0;
+  const bad = [];
+  for (const tierId of TIER_IDS) {
+    const zhPool = sweep(tierId, 'zh');
+    const enPool = sweep(tierId, 'en');
+    for (const [id, zq] of zhPool) {
+      const eq = enPool.get(id);
+      checked += 1;
+      if (!eq) bad.push(`${id}:英文题库缺这道题`);
+      else if (zq.prompt === eq.prompt) bad.push(`${id}:题干没随语言变`);
+      else if (zq.explain === eq.explain) bad.push(`${id}:讲解没随语言变`);
+      else if (CJK.test(eq.prompt) || CJK.test(eq.explain)) bad.push(`${id}:英文文本里还有汉字`);
+      else if (eq.options.length !== zq.options.length) bad.push(`${id}:选项数不一致`);
+    }
+  }
+  ok(`全部 ${checked} 道题都随语言变化(题干 + 讲解 + 选项数)`, bad.length === 0, bad.slice(0, 5).join(' | '));
+  ok('逐题核对覆盖了整库 15 题', checked === 15, `实际 ${checked}`);
+
+  // 标签是"数据键 + 字典",要在渲染层单独核对一遍
+  const tagBad = [];
+  for (const tierId of TIER_IDS) {
+    for (const [, qq] of sweep(tierId, 'en')) {
+      for (const tg of qq.tags) {
+        const label = tagLabel(tg);
+        // 英文标签里允许出现的汉字:只可能是漏译(标签的正确中英形式要么不同,要么本来就一样)
+        if (CJK.test(label)) tagBad.push(`${tg}->${label}`);
+      }
+    }
+  }
+  ok('英文界面下所有题目标签都没有汉字', tagBad.length === 0, [...new Set(tagBad)].join(', '));
+
+  setLocale('zh');
 }
 
 /* ------------------------------------------------------------------ */

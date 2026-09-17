@@ -220,8 +220,17 @@ for (const lang of LOCALES) {
   const src = readFileSync(new URL('../src/lib/i18n.svelte.ts', import.meta.url), 'utf8');
   const slice = (from, to) => src.slice(src.indexOf(from), to ? src.indexOf(to) : undefined);
   const keysOf = (block) => new Set([...block.matchAll(/^\s{4}'([^']+)':/gm)].map((m) => m[1]));
-  const zh = keysOf(slice('  zh: {', '  en: {'));
-  const en = keysOf(slice('  en: {', '\n};'));
+  /** key -> 取值(只看字符串条目;函数式文案不参与标签比对) */
+  const valuesOf = (block) =>
+    new Map(
+      [...block.matchAll(/^\s{4}'([^']+)':\s*'((?:[^'\\]|\\.)*)',/gm)].map((m) => [m[1], m[2]]),
+    );
+  const zhBlock = slice('  zh: {', '  en: {');
+  const enBlock = slice('  en: {', '\n};');
+  const zh = keysOf(zhBlock);
+  const en = keysOf(enBlock);
+  const zhVals = valuesOf(zhBlock);
+  const enVals = valuesOf(enBlock);
   const missingEn = [...zh].filter((k) => !en.has(k));
   const missingZh = [...en].filter((k) => !zh.has(k));
   ok('i18n 字典:每个中文 key 都有英文', missingEn.length === 0, missingEn.join(', '));
@@ -234,6 +243,18 @@ for (const lang of LOCALES) {
   const missingTagEn = [...allTags].filter((tag) => !en.has(`tag.${tag}`));
   ok(`i18n 字典:全部 ${allTags.size} 个题目标签都有中文条目`, missingTagZh.length === 0, missingTagZh.join(', '));
   ok('i18n 字典:全部题目标签都有英文条目', missingTagEn.length === 0, missingTagEn.join(', '));
+
+  /**
+   * 「有没有真的翻译」不能只看值等不等于 key ——
+   * `Python` / `Transformer` / `Web` / `GPT` / `NP` 这些标签的正确中英形式本来就一样。
+   * 真正要抓的是"**半译**":中文值已经改成别的说法、英文却还等于中文值(典型的复制粘贴漏改)。
+   */
+  const halfDone = [...allTags].filter((tag) => {
+    const z = zhVals.get(`tag.${tag}`);
+    const e = enVals.get(`tag.${tag}`);
+    return z !== undefined && e !== undefined && z !== tag && e === z;
+  });
+  ok('i18n 字典:没有"半译"的标签(中文改了、英文没跟上)', halfDone.length === 0, halfDone.join(', '));
 
   // 「进度 n/N」里的分母必须来自 ROUNDS_PER_TIER,不能写死。
   // (改档位题数时写死的 /5 不会报错,只会在界面上默默显示错的分母)
