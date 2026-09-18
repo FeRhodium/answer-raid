@@ -81,13 +81,30 @@ export function isZh(): boolean {
 export function setLocale(lang: Lang): void {
   if (!isLang(lang) || state.lang === lang) return;
   state.lang = lang;
+  if (typeof document !== 'undefined') document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  // 用户手动切过语言之后,把 URL 上的 ?lang= 摘掉。
+  // 否则该参数优先级高于 localStorage,刷新一次又会跳回参数指定的语言,
+  // 用户会觉得"我切了但没生效"。
+  dropQueryParam('lang');
   if (typeof localStorage === 'undefined') return;
   try {
     localStorage.setItem(LANG_KEY, JSON.stringify(lang));
   } catch {
     /* 无痕模式:忽略 */
   }
-  if (typeof document !== 'undefined') document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+}
+
+/** 从地址栏移除某个查询参数(不动历史记录的其他部分)。 */
+function dropQueryParam(key: string): void {
+  if (typeof window === 'undefined' || typeof history === 'undefined') return;
+  try {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has(key)) return;
+    url.searchParams.delete(key);
+    history.replaceState(null, '', url.pathname + (url.search ? url.search : '') + url.hash);
+  } catch {
+    /* 忽略 */
+  }
 }
 
 export function toggleLocale(): void {

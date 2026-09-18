@@ -86,6 +86,18 @@ export function setTheme(next: Theme): void {
   if (!isTheme(next) || state.theme === next) return;
   state.theme = next;
   applyThemeAttr();
+  // 手动切过主题后摘掉 ?theme=,否则刷新时该参数会再次盖过用户选择
+  if (typeof window !== 'undefined' && typeof history !== 'undefined') {
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('theme')) {
+        url.searchParams.delete('theme');
+        history.replaceState(null, '', url.pathname + url.search + url.hash);
+      }
+    } catch {
+      /* 忽略 */
+    }
+  }
   if (typeof localStorage === 'undefined') return;
   try {
     localStorage.setItem(THEME_KEY, JSON.stringify(next));
