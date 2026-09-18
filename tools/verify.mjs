@@ -12,7 +12,8 @@ import { readFileSync } from 'node:fs';
 import { noviceQuestions } from '../src/lib/data/questions/novice.ts';
 import { systemsQuestions } from '../src/lib/data/questions/systems.ts';
 import { acmQuestions } from '../src/lib/data/questions/acm.ts';
-import { localizeQuestion } from '../src/lib/data/types.ts';
+import { faqQuestions } from '../src/lib/data/questions/faq.ts';
+import { localizeQuestion, ROUNDS_PER_TIER } from '../src/lib/data/types.ts';
 import { TIERS as TIER_META } from '../src/lib/data/tiers.ts';
 
 /**
@@ -35,7 +36,7 @@ const flatten = (q) => ({
   chartData: q.chartData,
 });
 
-const ALL_RAW = [...noviceQuestions, ...systemsQuestions, ...acmQuestions];
+const ALL_RAW = [...noviceQuestions, ...systemsQuestions, ...acmQuestions, ...faqQuestions];
 
 /**
  * 档位配置从 tiers.ts 取(结构与数值),标签用中文名写在本脚本里。
@@ -54,7 +55,6 @@ const RAW_TIERS = TIER_META.map((m) => ({
   label: TIER_LABEL[m.id] ?? m.id,
   pool: ALL_RAW.filter((q) => q.tier === m.id),
 }));
-const ROUNDS_PER_TIER = 3;
 
 let pass = 0;
 let fail = 0;
@@ -78,12 +78,16 @@ function section(title) {
 /* ------------------------------------------------------------------ */
 section('1. 题库结构');
 
-const ALL = [...noviceQuestions, ...systemsQuestions, ...acmQuestions];
+const ALL = [...noviceQuestions, ...systemsQuestions, ...acmQuestions, ...faqQuestions];
 
-ok('总题数 = 15', ALL.length === 15, `实际 ${ALL.length}`);
+ok('总题数 = 39(15 原有 + 24 FAQ)', ALL.length === 39, `实际 ${ALL.length}`);
 
 for (const t of TIERS) {
-  ok(`${t.label} 恰好 ${ROUNDS_PER_TIER} 题`, t.pool.length === ROUNDS_PER_TIER, `实际 ${t.pool.length}`);
+  ok(
+    `${t.label} 题量足够一局(${ROUNDS_PER_TIER} 题),当前 ${t.pool.length} 题`,
+    t.pool.length >= ROUNDS_PER_TIER,
+    `实际 ${t.pool.length}`,
+  );
   ok(
     `${t.label} 全部 tier 字段正确`,
     t.pool.every((q) => q.tier === t.id),
@@ -202,13 +206,13 @@ for (const lang of LOCALES) {
 
 // 摊平不会丢字段:可选题材(code / lang / chart*)必须照抄
 for (const lang of LOCALES) {
-  const flat = [...noviceQuestions, ...systemsQuestions, ...acmQuestions].map((q) =>
+  const flat = [...noviceQuestions, ...systemsQuestions, ...acmQuestions, ...faqQuestions].map((q) =>
     localizeQuestion(q, lang),
   );
   ok(
     `[${lang}] 摊平后 code / chart 字段无丢失`,
     flat.every((q, i) => {
-      const src = [...noviceQuestions, ...systemsQuestions, ...acmQuestions][i];
+      const src = [...noviceQuestions, ...systemsQuestions, ...acmQuestions, ...faqQuestions][i];
       return q.code === src.code && q.chartKind === src.chartKind && q.chartData === src.chartData;
     }),
   );
@@ -327,7 +331,7 @@ for (let n = 0; n < 200; n++) {
     used.push(d.q.id);
   }
 }
-ok('同一档内 5 题不重复(200 次模拟)', dup === 0, `${dup} 次重复`);
+ok(`同一档内 ${ROUNDS_PER_TIER} 题不重复(200 次模拟)`, dup === 0, `${dup} 次重复`);
 
 /* ------------------------------------------------------------------ */
 section('3. 完整一局推进(独立复刻规则)');
@@ -387,17 +391,13 @@ function simulate({ answers }) {
 }
 
 // 3a. 全对
+const RUN_SIZE = TIERS.length * ROUNDS_PER_TIER; // 一局要答的题数(每档抽满一局)
 const perfect = simulate({ answers: () => true });
 ok('全对 → 通关', perfect.end === 'cleared', perfect.end);
-ok('全对 → 答对 15 题', perfect.correct === 15, String(perfect.correct));
-// 手工核算(连击**跨档累积**,不因晋级清零;每档 3 题,时间奖励满值 ×1.5):
-//   EZ 100×1.5×(1.0,1.1,1.2) = 150+165+180 = 495
-//   HD 180×1.5×(1.3,1.4,1.5) = 351+378+405 = 1134
-//   IN 280×1.5×(1.6,1.7,1.8) = 672+714+756 = 2142
-//   AT 400×1.5×(1.9,2.0,2.0) = 1140+1200+1200 = 3540
-//   SP 560×1.5×(2.0×3)       = 1680×3 = 5040
-ok('全对 → 满分 12351', perfect.score === 495 + 1134 + 2142 + 3540 + 5040, String(perfect.score));
-ok('全对 → 最高连击 15', perfect.bestChain === 15, String(perfect.bestChain));
+ok(`全对 → 答对 ${RUN_SIZE} 题`, perfect.correct === RUN_SIZE, String(perfect.correct));
+// 满分由 simulate 实算:每档 6 题、时间奖励满值 ×1.5、连击跨档累积到 ×2.0
+ok('全对 → 满分 26415', perfect.score === 26415, String(perfect.score));
+ok(`全对 → 最高连击 ${RUN_SIZE}`, perfect.bestChain === RUN_SIZE, String(perfect.bestChain));
 ok('全对 → 到达 SP 档', perfect.finalTier === 4, String(perfect.finalTier));
 
 // 3b. 第一题就错两次 → 死在 EZ 档
@@ -414,7 +414,7 @@ const hdDead = simulate({
 });
 ok('HD 档连错 2 题即出局(不灭=2)', hdDead.end === 'dead', hdDead.end);
 ok('HD 档出局时最高档位 = HD', hdDead.finalTier === 1, String(hdDead.finalTier));
-ok('HD 档出局时已答对 3 题(EZ 全对)', hdDead.correct === 3, String(hdDead.correct));
+ok(`HD 档出局时已答对 ${ROUNDS_PER_TIER} 题(EZ 全对)`, hdDead.correct === ROUNDS_PER_TIER, String(hdDead.correct));
 
 // 3d. 每档固定「错 1 题 + 连对 3 题」:EZ / HD 不灭=2 能扛住 1 次失误,
 //     但 IN 起不灭=1,那次失误就是致命的 —— 这正是「越往上越不许犯错」的设计。
@@ -425,12 +425,12 @@ const staged = simulate({
     return tierCounterA[t.id] !== 1; // 每档第 1 题错
   },
 });
-ok('EZ 档失误 1 次不致命(不灭=2)', staged.correct === 6, String(staged.correct));
+ok('EZ 档失误 1 次不致命(不灭=2),之后还能连过两档', staged.correct === 2 * ROUNDS_PER_TIER, String(staged.correct));
 ok('进入 IN 档后首次失误即出局(不灭=1)', staged.end === 'dead' && staged.finalTier === 2, `${staged.end}/${staged.finalTier}`);
-ok('该局作答 9 题(EZ 4 + HD 3 + IN 2)', staged.answered === 9, String(staged.answered));
+ok('该局作答 15 题(EZ 7 + HD 6 + IN 2)', staged.answered === 15, String(staged.answered));
 // EZ: 错一题把连击清零,所以后三题是 连击1/2/3: 150+165+180 = 495
 // HD: 同样先错一题清零,再 连击1/2/3: 180×1.5×(1.0,1.1,1.2) = 270+297+324 = 891
-ok('该局得分 1386(EZ 495 + HD 891)', staged.score === 1386, String(staged.score));
+ok('该局得分 3150(EZ 1500 + HD 1650)', staged.score === 3150, String(staged.score));
 
 // 3d-2. 只有 EZ 档失误、之后全对 → 能一路通关
 const tierCounterB = { ez: 0, hd: 0, in: 0, at: 0, sp: 0 };
@@ -441,12 +441,12 @@ const forgiving = simulate({
   },
 });
 ok('仅 EZ 档失误 1 次 → 仍能通关', forgiving.end === 'cleared', forgiving.end);
-ok('该局答对 15 题(失误不计分,但 3 道对的仍晋级)', forgiving.correct === 15, String(forgiving.correct));
-ok('该局作答 16 题(EZ 4 + 后四档各 3)', forgiving.answered === 16, String(forgiving.answered));
-ok('该局最高连击 15(失误后连对到通关)', forgiving.bestChain === 15, String(forgiving.bestChain));
+ok(`该局答对 ${RUN_SIZE} 题(失误不计分,但不影响后面全对)`, forgiving.correct === RUN_SIZE, String(forgiving.correct));
+ok('该局作答 31 题(仅 EZ 多错 1 题)', forgiving.answered === 31, String(forgiving.answered));
+ok(`该局最高连击 ${RUN_SIZE}(失误后连对到通关)`, forgiving.bestChain === RUN_SIZE, String(forgiving.bestChain));
 // 关键结论:答错只是重置连击倍率,不会「浪费」分数 ——
-// 该局与全对局的得分完全相同(12351),差别只在多项 1 次作答。
-ok('失误但不致命 → 得分与全对局相同 12351', forgiving.score === perfect.score, `${forgiving.score} vs ${perfect.score}`);
+// 该局与全对局的得分完全相同,差别只在多项 1 次作答。
+ok('失误但不致命 → 得分与全对局完全相同', forgiving.score === perfect.score, `${forgiving.score} vs ${perfect.score}`);
 
 // 3e. 不灭次数重置:确认晋级后 lives 回到该档 allowMiss
 ok(
@@ -469,12 +469,12 @@ function rankOf({ cleared, correct, finalTier, tierIndex, score }) {
   if (score >= 600) return 'C';
   return 'D';
 }
-ok('全对通关 → SSS', rankOf({ cleared: true, correct: 15, finalTier: 4, tierIndex: 4, score: 12351 }) === 'SSS');
-ok('错一题通关 → SS', rankOf({ cleared: true, correct: 14, finalTier: 4, tierIndex: 4, score: 11000 }) === 'SS');
-ok('死在 SP 档 → S', rankOf({ cleared: false, correct: 12, finalTier: 4, tierIndex: 4, score: 8000 }) === 'S');
-ok('打到高阶档 → A', rankOf({ cleared: false, correct: 9, finalTier: 3, tierIndex: 3, score: 4500 }) === 'A');
-ok('打到深入档 → B', rankOf({ cleared: false, correct: 7, finalTier: 2, tierIndex: 2, score: 2200 }) === 'B');
-ok('只过 EZ/HD → C', rankOf({ cleared: false, correct: 4, finalTier: 1, tierIndex: 1, score: 900 }) === 'C');
+ok('全对通关 → SSS', rankOf({ cleared: true, correct: 30, finalTier: 4, tierIndex: 4, score: 26415 }) === 'SSS');
+ok('错一题通关 → SS', rankOf({ cleared: true, correct: 29, finalTier: 4, tierIndex: 4, score: 24000 }) === 'SS');
+ok('死在 SP 档 → S', rankOf({ cleared: false, correct: 26, finalTier: 4, tierIndex: 4, score: 12000 }) === 'S');
+ok('打到高阶档 → A', rankOf({ cleared: false, correct: 24, finalTier: 3, tierIndex: 3, score: 4500 }) === 'A');
+ok('打到深入档 → B', rankOf({ cleared: false, correct: 18, finalTier: 2, tierIndex: 2, score: 2200 }) === 'B');
+ok('只过 EZ → C', rankOf({ cleared: false, correct: 6, finalTier: 1, tierIndex: 1, score: 900 }) === 'C');
 ok('低分 → D', rankOf({ cleared: false, correct: 0, finalTier: 0, tierIndex: 0, score: 0 }) === 'D');
 
 // 阈值必须与真实引擎里写的一致(防止两边漂移)

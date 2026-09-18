@@ -91,4 +91,4 @@ export interface TierMeta {
 }
 
 /** 每个档位需答对的题数,答满即晋级。 */
-export const ROUNDS_PER_TIER = 3;
+export const ROUNDS_PER_TIER = 6;

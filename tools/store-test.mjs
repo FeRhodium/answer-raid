@@ -155,8 +155,9 @@ ok('结算未通关', game.cleared === false);
 ok('最终档位记录为 HD 档', tierLabel(TIERS[game.finalTierIndex]) === '进阶', String(game.finalTierIndex));
 ok('最高连击被记录', game.bestChain >= 1, String(game.bestChain));
 const rankNow = q.rank();
-// 该局攒了 360 分(远低于 B 档的 2000),也没摸到 SP → D
-ok('评级为 D(360 分,远低于各档门槛)', rankNow.t === 'D', `${rankNow.t} / 分数 ${game.score}`);
+// 该局:EZ 档答对 6 题(150+165+180+195+210+225 = 1125)、HD 档首题出局
+// → 分数 1125,落在 600~2000 之间,应为 C
+ok('评级为 C(EZ 全过、折在 HD 档门口)', rankNow.t === 'C', `${rankNow.t} / 分数 ${game.score}`);
 
 /* ------------------------------------------------------------------ */
 section('8. 重开一局:状态完全重置');
@@ -231,23 +232,27 @@ section('9c. i18n:全题库逐题核对(不只是抽到的那一道)');
 {
   const CJK = /[\u4e00-\u9fa5]/;
   const TIER_IDS = TIERS.map((x) => x.id);
-  /** 反复抽题,把某档某语言下的每题文本都收集齐 */
+  /** 反复抽题,把某档某语言下的**每一道题**都收集齐 */
   const sweep = (tierId, lang) => {
     setLocale(lang);
+    const target = bankFor(tierId, lang).length;
     const seen = new Map();
-    for (let i = 0; i < 400 && seen.size < ROUNDS_PER_TIER; i++) {
+    for (let i = 0; i < 4000 && seen.size < target; i++) {
       const d = drawQuestion(tierId, []);
       if (!d) break;
       if (!seen.has(d.q.id)) seen.set(d.q.id, d.q);
     }
-    return seen;
+    return { seen, target };
   };
 
   let checked = 0;
   const bad = [];
   for (const tierId of TIER_IDS) {
-    const zhPool = sweep(tierId, 'zh');
-    const enPool = sweep(tierId, 'en');
+    const { seen: zhPool, target } = sweep(tierId, 'zh');
+    const { seen: enPool } = sweep(tierId, 'en');
+    // 该档的题库必须够一局抽满,否则会出现"抽不满就晋级"
+    if (target < ROUNDS_PER_TIER) bad.push(`${tierId}:题库只有 ${target} 题,不足一局 ${ROUNDS_PER_TIER} 题`);
+    if (zhPool.size < target) bad.push(`${tierId}:抽样 ${zhPool.size}/${target} 没抽全`);
     for (const [id, zq] of zhPool) {
       const eq = enPool.get(id);
       checked += 1;
@@ -258,13 +263,17 @@ section('9c. i18n:全题库逐题核对(不只是抽到的那一道)');
       else if (eq.options.length !== zq.options.length) bad.push(`${id}:选项数不一致`);
     }
   }
-  ok(`全部 ${checked} 道题都随语言变化(题干 + 讲解 + 选项数)`, bad.length === 0, bad.slice(0, 5).join(' | '));
-  ok('逐题核对覆盖了整库 15 题', checked === 15, `实际 ${checked}`);
+  ok('每档题量都不少于一局所需,且全部题目随语言变化', bad.length === 0, bad.slice(0, 5).join(' | '));
+  {
+    const total = TIER_IDS.reduce((n, id) => n + bankFor(id, 'zh').length, 0);
+    ok(`逐题核对覆盖了整库(${total} 题)`, checked === total, `实际 ${checked}`);
+  }
 
   // 标签是"数据键 + 字典",要在渲染层单独核对一遍
   const tagBad = [];
   for (const tierId of TIER_IDS) {
-    for (const [, qq] of sweep(tierId, 'en')) {
+    const { seen } = sweep(tierId, 'en');
+    for (const [, qq] of seen) {
       for (const tg of qq.tags) {
         const label = tagLabel(tg);
         // 英文标签里允许出现的汉字:只可能是漏译(标签的正确中英形式要么不同,要么本来就一样)
