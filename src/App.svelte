@@ -81,7 +81,7 @@
   {:else if inRun}
     <main class="play">
       <Hud />
-      {#key game.current?.q.id ?? 'none'}
+      {#key game.current?.source.id ?? 'none'}
         <div class="stack anim-rise">
           <QuestionCard />
           {#if game.phase === 'feedback'}

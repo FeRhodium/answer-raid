@@ -1,18 +1,24 @@
 <script lang="ts">
   /** 题目卡:题面 / 代码 / 图表 / 选项。feedback 阶段自动标出正误。 */
   import Rich from './Rich.svelte';
-  import { game, answer } from '../quiz.svelte';
+  import { game, answer, currentQuestion, currentAnswerIndex } from '../quiz.svelte';
   import { ROUNDS_PER_TIER } from '../data/types';
   import { tierMeta } from '../data/tiers';
   import { msg, t, tagLabel } from '../i18n.svelte.ts';
 
-  const cur = $derived(game.current);
+  /**
+   * 注意这里读的是 `currentQuestion()` 而不是 `game.current.q`:
+   * 前者按**当前语言**即时摊平,所以切换语言时题干/选项会立刻跟着变;
+   * 后者是抽题那一刻冻结的单语快照。
+   */
+  const cur = $derived(currentQuestion());
+  const answerIdx = $derived(currentAnswerIndex());
   const locked = $derived(game.phase !== 'playing');
   const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
   const svgSrc = $derived(
-    cur?.q.chartKind === 'svg' && cur.q.chartData
-      ? `data:image/svg+xml;utf8,${encodeURIComponent(cur.q.chartData)}`
+    cur?.chartKind === 'svg' && cur.chartData
+      ? `data:image/svg+xml;utf8,${encodeURIComponent(cur.chartData)}`
       : null,
   );
 
@@ -26,34 +32,34 @@
     const cls: string[] = [];
     if (game.eliminated.includes(i)) cls.push('gone');
     if (!locked) return cls.join(' ');
-    if (cur && i === cur.answerIndex) cls.push('right');
-    if (game.picked === i && cur && i !== cur.answerIndex) cls.push('wrong');
+    if (cur && i === answerIdx) cls.push('right');
+    if (game.picked === i && cur && i !== answerIdx) cls.push('wrong');
     if (game.picked === i) cls.push('picked');
     return cls.join(' ');
   }
 </script>
 
 {#if cur}
-  <article class="qcard panel" class:shake={game.isCorrect === false} style="--tier-hue:{tierMeta(cur.q.tier).hue}">
+  <article class="qcard panel" class:shake={game.isCorrect === false} style="--tier-hue:{tierMeta(cur.tier).hue}">
     <div class="qhead">
       <span class="qno">
         <em>Q</em>{String(game.tierProgress + 1).padStart(2, '0')}
         <span class="mute">/ {String(ROUNDS_PER_TIER).padStart(2, '0')}</span>
       </span>
       <span class="tags">
-        {#each cur.q.tags as tg (tg)}<span class="chip">{tagLabel(tg)}</span>{/each}
+        {#each cur.tags as tg (tg)}<span class="chip">{tagLabel(tg)}</span>{/each}
       </span>
       {#if game.penalty < 1}
         <span class="chip pen">情报 ×{game.penalty}</span>
       {/if}
     </div>
 
-    <h2 class="prompt"><Rich text={cur.q.prompt} /></h2>
+    <h2 class="prompt"><Rich text={cur.prompt} /></h2>
 
-    {#if cur.q.code}
-      <pre class="code"><code>{cur.q.code}</code></pre>
-    {:else if cur.q.chartKind === 'ascii' && cur.q.chartData}
-      <pre class="chart">{cur.q.chartData}</pre>
+    {#if cur.code}
+      <pre class="code"><code>{cur.code}</code></pre>
+    {:else if cur.chartKind === 'ascii' && cur.chartData}
+      <pre class="chart">{cur.chartData}</pre>
     {:else if svgSrc}
       <img class="chartSvg" src={svgSrc} alt="题目示意图" />
     {/if}
@@ -71,7 +77,7 @@
             <span class="mark">
               {#if game.eliminated.includes(i)}
                 ✕
-              {:else if locked && i === cur.answerIndex}
+              {:else if locked && i === answerIdx}
                 ✓
               {:else if locked && game.picked === i}
                 ✗

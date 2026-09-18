@@ -2,11 +2,12 @@
   /** 判定面板:正误 + 原理讲解 + 得分明细。 */
   import { fly } from 'svelte/transition';
   import Rich from './Rich.svelte';
-  import { game, tier } from '../quiz.svelte';
+  import { game, tier, currentQuestion, currentAnswerIndex } from '../quiz.svelte';
   import { ROUNDS_PER_TIER } from '../data/types';
   import { msg, t, fmt } from '../i18n.svelte.ts';
 
-  const cur = $derived(game.current);
+  const cur = $derived(currentQuestion());
+  const answerIdx = $derived(currentAnswerIndex());
   const verdict = $derived(
     game.timesUp
       ? 'fb.verdict.timesUp'
@@ -30,9 +31,9 @@
       </span>
 
       <span class="rightAns mute">
-        正解 <b>{String.fromCharCode(65 + cur.answerIndex)}</b>
+        {t(msg('fb.correctAnswer'))} <b>{String.fromCharCode(65 + answerIdx)}</b>
         <span class="sep">·</span>
-        <Rich text={cur.options[cur.answerIndex]} />
+        <Rich text={cur.options[answerIdx]} />
       </span>
 
       {#if game.isCorrect}
@@ -44,7 +45,7 @@
 
     <div class="why">
       <span class="wh">{t(msg('fb.why'))}</span>
-      <Rich text={cur.q.explain} />
+      <Rich text={cur.explain} />
     </div>
 
     <div class="foot">

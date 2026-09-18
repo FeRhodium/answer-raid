@@ -550,15 +550,30 @@ section('12. i18n:语言切换');
 {
   const langBtn = $('.mini.lang');
   const jokerNames = () => $$('.jcard .nm').map((e) => e.textContent.trim());
+  const CJK = /[\u4e00-\u9fa5]/;
+  /** 当前屏幕上的题目文本(题干 + 选项 + 标签) */
+  const qParts = () => ({
+    prompt: text('.prompt'),
+    options: $$('.otext').map((e) => e.textContent.trim()).join('|'),
+    tags: $$('.qhead .chip').map((e) => e.textContent.trim()).join('/'),
+  });
 
   ok('存在语言切换按钮', !!langBtn, String(!!langBtn));
   ok('标题页顶部不再放语言滑动条', !has('.langSwitch'));
   ok('中文界面:语言按钮带地球图标且指向 EN', langBtn?.textContent.includes('🌐') && langBtn?.textContent.includes('EN'), langBtn?.textContent.trim());
   ok('中文界面:锦囊名是中文', jokerNames().includes('逻辑切割'), jokerNames().join('/'));
 
+  // 关键:记住切换**之前**的题目文本,用来验证切换后当前这道题也跟着变
+  const zhQ = qParts();
+  ok('中文界面:题干是中文', zhQ.prompt.length > 0 && CJK.test(zhQ.prompt), zhQ.prompt.slice(0, 40));
+
   if (langBtn) langBtn.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   await sleep(150);
 
+  const enQ = qParts();
+  ok('切到英文:**当前这道题的题干**立刻变英文(不换题)', enQ.prompt !== zhQ.prompt && !CJK.test(enQ.prompt), enQ.prompt.slice(0, 50));
+  ok('切到英文:当前选项里没有汉字', !CJK.test(enQ.options), enQ.options.slice(0, 60));
+  ok('切到英文:标签也变英文', enQ.tags.length > 0 && !CJK.test(enQ.tags), enQ.tags);
   ok('切到英文:锦囊名变英文', jokerNames().includes('Logic Cut'), jokerNames().join('/'));
   ok('切到英文:中文锦囊名消失', !jokerNames().includes('逻辑切割'), jokerNames().join('/'));
   ok('切到英文:语言按钮指向 中', langBtn?.textContent.trim() === '🌐中', langBtn?.textContent.trim());

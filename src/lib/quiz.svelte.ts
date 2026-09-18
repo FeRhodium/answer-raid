@@ -9,7 +9,13 @@
 import type { TierId } from './data/types';
 import { ROUNDS_PER_TIER } from './data/types';
 import { TIERS, tierMeta } from './data/tiers';
-import { drawQuestion, hintFor, type DrawnQuestion } from './data/questions';
+import {
+  drawQuestion,
+  hintFor,
+  localizedQuestion,
+  answerIndexOf,
+  type DrawnQuestion,
+} from './data/questions';
 import { fmt, msg, t } from './i18n.svelte.ts';
 import * as sound from './audio';
 import { loadSoundPref, pushHistory, saveBest, saveHandle, saveSoundPref } from './storage';
@@ -129,6 +135,22 @@ let tickCounter = 0;
 export const tier = () => tierMeta(TIERS[game.tierIndex].id);
 
 /**
+ * **当前这道题,按当前语言即时求值。**
+ *
+ * 这是"切语言后题干/选项立刻跟着变"的关键:`game.current` 只存双语源码与选项顺序,
+ * 文本在渲染时才摊平,所以中途切换语言会立刻反映到当前这道题上。
+ * ——早期版本在抽题时就把文本冻结成单语,切语言只换界面、题目本身不变。
+ */
+export function currentQuestion() {
+  return game.current ? localizedQuestion(game.current) : null;
+}
+
+/** 当前题的正确项在**展示顺序**中的下标(与语言无关)。 */
+export function currentAnswerIndex(): number {
+  return game.current ? answerIndexOf(game.current) : -1;
+}
+
+/**
  * 下面这些派生的数值都以「函数返回值」的形式导出 ——
  * Svelte 5 不允许从模块里直接导出 $derived,导出访问器是官方推荐写法。
  */
@@ -197,7 +219,7 @@ function nextQuestion(): void {
     finishRun(false);
     return;
   }
-  game.usedIds = [...game.usedIds, d.q.id];
+  game.usedIds = [...game.usedIds, d.source.id];
   game.current = d;
   game.picked = null;
   game.isCorrect = null;
@@ -254,7 +276,7 @@ function reveal(index: number, timesUp: boolean): void {
     clearInterval(timer);
     timer = null;
   }
-  const correct = !timesUp && index === cur.answerIndex;
+  const correct = !timesUp && index === currentAnswerIndex();
   game.picked = index;
   game.isCorrect = correct;
   game.timesUp = timesUp;
@@ -399,9 +421,9 @@ export function useJoker(id: JokerId): void {
   game.jokersUsed = [...game.jokersUsed, id];
 
   if (id === 'fifty') {
-    const wrong = cur.options
-      .map((_, i) => i)
-      .filter((i) => i !== cur.answerIndex);
+    const correct = currentAnswerIndex();
+    const count = localizedQuestion(cur).options.length;
+    const wrong = Array.from({ length: count }, (_, i) => i).filter((i) => i !== correct);
     const kill = wrong.sort(() => Math.random() - 0.5).slice(0, Math.min(2, wrong.length));
     game.eliminated = kill;
     sound.sfx('power');
@@ -409,7 +431,7 @@ export function useJoker(id: JokerId): void {
     game.timeLeft = Math.min(game.timeLimit, +(game.timeLeft + FREEZE_SECONDS).toFixed(1));
     sound.sfx('power');
   } else {
-    game.hint = hintFor(cur.q);
+    game.hint = hintFor(localizedQuestion(cur));
     game.penalty = HINT_PENALTY;
     sound.sfx('blip');
   }
@@ -431,7 +453,8 @@ const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 export function answerByKey(key: string): boolean {
   if (game.phase !== 'playing' || !game.current) return false;
   const i = LETTERS.indexOf(key.toUpperCase());
-  if (i < 0 || i >= game.current.options.length) return false;
+  const count = game.current ? localizedQuestion(game.current).options.length : 0;
+  if (i < 0 || i >= count) return false;
   if (game.eliminated.includes(i)) return true;
   answer(i);
   return true;

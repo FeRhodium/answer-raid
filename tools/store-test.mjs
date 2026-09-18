@@ -27,8 +27,16 @@ const q = await import('../src/lib/quiz.svelte.ts');
 const { game, tier } = q;
 const TIERS = (await import('../src/lib/data/tiers.ts')).TIERS;
 const { ROUNDS_PER_TIER } = await import('../src/lib/data/types.ts');
-const { bankFor, drawQuestion } = await import('../src/lib/data/questions.ts');
+const { bankFor, drawQuestion, localizedQuestion } = await import('../src/lib/data/questions.ts');
 const { fmt, locale, setLocale, tagLabel } = await import('../src/lib/i18n.svelte.ts');
+
+/**
+ * 题干/选项现在是**按当前语言即时求值**的(`game.current` 只存双语源码 + 选项顺序),
+ * 所以测试也要走这两个访问器,而不是读冻结的快照字段。
+ */
+const curQ = () => q.currentQuestion();
+const curIdx = () => q.currentAnswerIndex();
+const curId = () => game.current?.source.id;
 
 /** 档位名现在走 i18n 字典(`tier.<id>.label`),不再是 TierMeta 上的字段。 */
 const tierLabel = (meta) => fmt(`tier.${meta.id}.label`);
@@ -44,8 +52,8 @@ async function waitPhase(phase, timeoutMs = 6000) {
   return true;
 }
 /** 当前题的正确项下标(直接来自商店,100% 准确) */
-const correctIndex = () => game.current.answerIndex;
-const questionId = () => game.current.q.id;
+const correctIndex = () => curIdx();
+const questionId = () => curId();
 
 /* ------------------------------------------------------------------ */
 section('1. 开局');
@@ -59,7 +67,7 @@ ok('档位是 EZ 档', tierLabel(tier()) === '轻松', tierLabel(tier()));
 ok('初始分数 0', game.score === 0, String(game.score));
 ok('初始不灭 = 2', game.lives === 2, String(game.lives));
 ok('初始锦囊 = 3', game.jokersLeft === 3, String(game.jokersLeft));
-ok('拿到一道题且 4 个选项', game.current.options.length === 4, String(game.current.options.length));
+ok('拿到一道题且 4 个选项', curQ()?.options.length === 4, String(curQ()?.options.length));
 ok('正确项下标合法', correctIndex() >= 0 && correctIndex() < 4, String(correctIndex()));
 
 section('2. 时间奖励随时间衰减');
@@ -189,41 +197,41 @@ section('9b. i18n:抽题按当前语言本地化');
   // 中文:题干应含汉字
   setLocale('zh');
   q.retry();
-  ok('[zh] 抽到的题是中文题干', /[\u4e00-\u9fa5]/.test(game.current.q.prompt), game.current.q.prompt.slice(0, 40));
+  ok('[zh] 抽到的题是中文题干', /[\u4e00-\u9fa5]/.test(curQ().prompt), curQ().prompt.slice(0, 40));
   // 注意:选项**不保证**含汉字 —— 有些题的选项是 `[1, 4, 7]` 这类两种语言通用的字面量。
   // 所以这里只断言「选项文本与题库里该题的中文选项一致」。
   {
-    const zhBank = bankFor(game.current.q.tier, 'zh').find((x) => x.id === game.current.q.id);
+    const zhBank = bankFor(curQ().tier, 'zh').find((x) => x.id === curId());
     ok(
       '[zh] 选项取自中文题库',
-      zhBank !== undefined && zhBank.options.every((o) => game.current.q.options.includes(o)),
-      game.current.q.options.join('|'),
+      zhBank !== undefined && zhBank.options.every((o) => curQ().options.includes(o)),
+      curQ().options.join('|'),
     );
   }
   ok('[zh] 情报文案是中文', q.canUseJoker('hint') && (q.useJoker('hint'), /[\u4e00-\u9fa5]/.test(game.hint)), String(game.hint));
 
   // 英文:同一道题应换成英文文本,且结构(id / 答案下标 / 选项数)完全不变
-  const zhId = game.current.q.id;
-  const zhCount = game.current.q.options.length;
+  const zhId = curId();
+  const zhCount = curQ().options.length;
   setLocale('en');
   q.retry();
-  ok('[en] 抽到的题是英文题干', !/[\u4e00-\u9fa5]/.test(game.current.q.prompt), game.current.q.prompt.slice(0, 60));
-  ok('[en] 题面确实有英文内容', /[a-zA-Z]{4,}/.test(game.current.q.prompt), game.current.q.prompt.slice(0, 40));
-  ok('[en] 选项数不变', game.current.q.options.length === zhCount, String(game.current.q.options.length));
+  ok('[en] 抽到的题是英文题干', !/[\u4e00-\u9fa5]/.test(curQ().prompt), curQ().prompt.slice(0, 60));
+  ok('[en] 题面确实有英文内容', /[a-zA-Z]{4,}/.test(curQ().prompt), curQ().prompt.slice(0, 40));
+  ok('[en] 选项数不变', curQ().options.length === zhCount, String(curQ().options.length));
   // 英文界面下抽到的 id 必须是当前档位题库里的合法题(不写死文件名前缀)
   ok(
     '[en] id 仍是该档题库里的合法 id',
-    tierIds(game.current.q.tier).includes(game.current.q.id),
-    `${game.current.q.id} (档位 ${game.current.q.tier})`,
+    tierIds(curQ().tier).includes(curId()),
+    `${curId()} (档位 ${curQ().tier})`
   );
-  ok('[en] 正确项下标仍在选项范围内', game.current.answerIndex >= 0 && game.current.answerIndex < zhCount, String(game.current.answerIndex));
+  ok('[en] 正确项下标仍在选项范围内', curIdx() >= 0 && curIdx() < zhCount, String(curIdx()));
   ok('[en] 情报文案是英文', q.canUseJoker('hint') && (q.useJoker('hint'), !/[\u4e00-\u9fa5]/.test(game.hint)), String(game.hint));
   ok('[en] 计分明细是英文', game.lastBreakdown === '' || !/[\u4e00-\u9fa5]/.test(game.lastBreakdown), game.lastBreakdown);
 
   // 复位,避免影响后续用例
   setLocale('zh');
   q.retry();
-  ok('复位后回到中文题干', /[\u4e00-\u9fa5]/.test(game.current.q.prompt), game.current.q.prompt.slice(0, 30));
+  ok('复位后回到中文题干', /[\u4e00-\u9fa5]/.test(curQ().prompt), curQ().prompt.slice(0, 30));
   void zhId;
 }
 
@@ -240,7 +248,9 @@ section('9c. i18n:全题库逐题核对(不只是抽到的那一道)');
     for (let i = 0; i < 4000 && seen.size < target; i++) {
       const d = drawQuestion(tierId, []);
       if (!d) break;
-      if (!seen.has(d.q.id)) seen.set(d.q.id, d.q);
+      const id = d.source.id;
+      // 按该语言摊平后再比对(摊平是渲染层真正用的那一步)
+      if (!seen.has(id)) seen.set(id, localizedQuestion(d, lang));
     }
     return { seen, target };
   };
@@ -284,6 +294,37 @@ section('9c. i18n:全题库逐题核对(不只是抽到的那一道)');
   ok('英文界面下所有题目标签都没有汉字', tagBad.length === 0, [...new Set(tagBad)].join(', '));
 
   setLocale('zh');
+}
+
+/* ------------------------------------------------------------------ */
+section('9d. i18n:切语言后**当前这道题**要立刻跟着变(不换题)');
+{
+  const CJK = /[\u4e00-\u9fa5]/;
+  setLocale('zh');
+  q.retry();
+  const idBefore = curId();
+  const zhPrompt = curQ().prompt;
+  const zhOpts = curQ().options.slice();
+
+  // 只切语言,**不重新抽题**
+  setLocale('en');
+  const enPrompt = curQ().prompt;
+  const enOpts = curQ().options.slice();
+  const enTags = curQ().tags.map((x) => tagLabel(x));
+
+  ok('切语言不换题(题目 id 不变)', curId() === idBefore, `${idBefore} -> ${curId()}`);
+  ok('切语言后题干立刻变英文', enPrompt !== zhPrompt && !CJK.test(enPrompt), enPrompt.slice(0, 50));
+  // 选项里可能全是数字/专有名词这类两语通用的字面量(如 `45 | 55 | 100 | 10`),
+  // 所以这里断言的是"英文模式下不含汉字",而不是"选项文本必须变化"。
+  ok('切语言后选项里没有汉字', !CJK.test(enOpts.join('')), enOpts.join(' | '));
+  ok('切语言后标签也变英文', enTags.every((x) => !CJK.test(x)), enTags.join('/'));
+  ok('选项条数不变', enOpts.length === zhOpts.length, `${zhOpts.length} vs ${enOpts.length}`);
+  ok('正确项下标不变(选项顺序不因语言重洗)', curIdx() >= 0 && curIdx() < enOpts.length, String(curIdx()));
+
+  // 切回中文,应当与最初完全一致
+  setLocale('zh');
+  ok('切回中文后题干复原', curQ().prompt === zhPrompt, curQ().prompt.slice(0, 40));
+  ok('切回中文后选项复原', curQ().options.join('|') === zhOpts.join('|'), curQ().options.join('|'));
 }
 
 /* ------------------------------------------------------------------ */

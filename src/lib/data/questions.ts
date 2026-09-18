@@ -32,15 +32,31 @@ export function bankFor(tier: TierId, lang: Lang): Question[] {
   return (BANK_SOURCE[tier] ?? []).map((q) => localizeQuestion(q, lang));
 }
 
-/** 一次「抽题」的结果:题目本身(已本地化)+ 打乱后的选项 + 新答案下标。 */
+/**
+ * 一次「抽题」的结果。
+ *
+ * 关键设计:`source` 与 `optionOrder` 都**不带语言**,语言相关的文本一律通过
+ * `localizedQuestion()` 即时求值 —— 这样**中途切换语言时,连当前这道题也会立刻跟着变**。
+ * (早期版本在抽题时就把文本摊平并冻结,导致切语言只换了界面、题目本身不变。)
+ */
 export interface DrawnQuestion {
-  q: Question;
-  /** 打乱后的展示选项。 */
-  options: string[];
-  /** 正确项在 options 中的下标。 */
-  answerIndex: number;
-  /** 抽题时的语言,便于调试与再本地化。 */
-  lang: Lang;
+  /** 双语题源,保留两份文本。 */
+  source: LocalizedQuestion;
+  /** 展示用的选项顺序(下标数组),与语言无关。 */
+  optionOrder: number[];
+  /** 抽题时的语言,仅用于调试。 */
+  drawnLang: Lang;
+}
+
+/** 把一道抽好的题按**当前语言**摊平。纯函数,可随 locale 变化反复求值。 */
+export function localizedQuestion(d: DrawnQuestion, lang: Lang = locale()): Question {
+  const q = localizeQuestion(d.source, lang);
+  return { ...q, options: d.optionOrder.map((i) => q.options[i]) };
+}
+
+/** 抽好的题里,正确项在**展示顺序**中的下标。 */
+export function answerIndexOf(d: DrawnQuestion): number {
+  return d.optionOrder.indexOf(d.source.answer);
 }
 
 export function shuffle<T>(input: readonly T[]): T[] {
@@ -55,15 +71,14 @@ export function shuffle<T>(input: readonly T[]): T[] {
 }
 
 /**
- * 抽一道该档位还没在本局出现过的题,按当前语言本地化,并把选项顺序打乱。
+ * 抽一道该档位还没在本局出现过的题,并把选项顺序打乱。
  * 题目耗尽时从该档位重新洗牌(保持可无限重玩),但会尽量避开最近用过的。
  */
 export function drawQuestion(
   tier: TierId,
   usedIds: readonly string[],
 ): DrawnQuestion | null {
-  const lang = locale();
-  const pool = bankFor(tier, lang);
+  const pool = BANK_SOURCE[tier] ?? [];
   if (pool.length === 0) return null;
 
   const used = new Set(usedIds);
@@ -76,12 +91,11 @@ export function drawQuestion(
     if (candidates.length === 0) candidates = pool.slice();
   }
 
-  const q = candidates[Math.floor(Math.random() * candidates.length)];
-  const correctText = q.options[q.answer];
-  const options = shuffle(q.options);
-  const answerIndex = options.indexOf(correctText);
+  const source = candidates[Math.floor(Math.random() * candidates.length)];
+  // 选项条数两语一致,所以顺序可以一次定好、两种语言共用
+  const optionOrder = shuffle(source.zh.options.map((_, i) => i));
 
-  return { q, options, answerIndex, lang };
+  return { source, optionOrder, drawnLang: locale() };
 }
 
 /** 提供给「内线情报」锦囊的一句话提示:优先用可公开的出处,否则用考点。 */
