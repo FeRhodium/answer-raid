@@ -176,12 +176,12 @@ export function accuracy(): number {
 
 export function rank(): { t: string; d: string } {
   const s = game.score;
-  const reachedSp = game.finalTierIndex >= 4 || game.tierIndex >= 4;
+  const reachedIn = game.finalTierIndex >= 2 || game.tierIndex >= 2;
   if (game.cleared && game.correct >= TIERS.length * ROUNDS_PER_TIER) return { t: 'SSS', d: fmt('rank.SSS') };
   if (game.cleared) return { t: 'SS', d: fmt('rank.SS') };
-  if (reachedSp) return { t: 'S', d: fmt('rank.S') };
-  if (s >= 4200) return { t: 'A', d: fmt('rank.A') };
-  if (s >= 2000) return { t: 'B', d: fmt('rank.B') };
+  if (reachedIn) return { t: 'S', d: fmt('rank.S') };
+  if (s >= 3500) return { t: 'A', d: fmt('rank.A') };
+  if (s >= 1800) return { t: 'B', d: fmt('rank.B') };
   if (s >= 600) return { t: 'C', d: fmt('rank.C') };
   return { t: 'D', d: fmt('rank.D') };
 }

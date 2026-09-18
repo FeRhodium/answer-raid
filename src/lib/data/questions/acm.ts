@@ -39,7 +39,7 @@ export const acmQuestions: LocalizedQuestion[] = [
   },
   {
     id: 'acm-2',
-    tier: 'at',
+    tier: 'in',
     tags: ['浮点数', 'IEEE754'],
     code: `single precision (32 bit): 1 + 8 + 23 = 32
 double precision (64 bit): 1 + 11 + 52 = 64
@@ -72,7 +72,7 @@ double precision (64 bit): 1 + 11 + 52 = 64
   },
   {
     id: 'acm-3',
-    tier: 'sp',
+    tier: 'in',
     tags: ['计算理论', 'NP'],
     answer: 2,
     zh: {
@@ -119,7 +119,7 @@ double precision (64 bit): 1 + 11 + 52 = 64
   },
   {
     id: 'acm-5',
-    tier: 'sp',
+    tier: 'in',
     tags: ['算法', '双指针'],
     answer: 2,
     zh: {

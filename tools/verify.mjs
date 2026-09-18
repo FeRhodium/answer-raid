@@ -42,7 +42,7 @@ const ALL_RAW = [...noviceQuestions, ...systemsQuestions, ...acmQuestions, ...fa
  * 档位配置从 tiers.ts 取(结构与数值),标签用中文名写在本脚本里。
  * 题库**按每题自己的 `tier` 字段**分档 —— 与 questions.ts 的推导方式一致。
  */
-const TIER_LABEL = { ez: '轻松档 EZ', hd: '进阶档 HD', in: '深入档 IN', at: '高阶档 AT', sp: '特殊档 SP' };
+const TIER_LABEL = { ez: '轻松档 EZ', hd: '进阶档 HD', in: '深入档 IN' };
 const TIERS = TIER_META.map((m) => ({
   id: m.id,
   label: TIER_LABEL[m.id] ?? m.id,
@@ -396,9 +396,9 @@ const perfect = simulate({ answers: () => true });
 ok('全对 → 通关', perfect.end === 'cleared', perfect.end);
 ok(`全对 → 答对 ${RUN_SIZE} 题`, perfect.correct === RUN_SIZE, String(perfect.correct));
 // 满分由 simulate 实算:每档 6 题、时间奖励满值 ×1.5、连击跨档累积到 ×2.0
-ok('全对 → 满分 26415', perfect.score === 26415, String(perfect.score));
+ok('全对 → 满分 10185', perfect.score === 10185, String(perfect.score));
 ok(`全对 → 最高连击 ${RUN_SIZE}`, perfect.bestChain === RUN_SIZE, String(perfect.bestChain));
-ok('全对 → 到达 SP 档', perfect.finalTier === 4, String(perfect.finalTier));
+ok('全对 → 到达 IN 档', perfect.finalTier === 2, String(perfect.finalTier));
 
 // 3b. 第一题就错两次 → 死在 EZ 档
 let n1 = 0;
@@ -418,7 +418,7 @@ ok(`HD 档出局时已答对 ${ROUNDS_PER_TIER} 题(EZ 全对)`, hdDead.correct 
 
 // 3d. 每档固定「错 1 题 + 连对 3 题」:EZ / HD 不灭=2 能扛住 1 次失误,
 //     但 IN 起不灭=1,那次失误就是致命的 —— 这正是「越往上越不许犯错」的设计。
-const tierCounterA = { ez: 0, hd: 0, in: 0, at: 0, sp: 0 };
+const tierCounterA = { ez: 0, hd: 0, in: 0 };
 const staged = simulate({
   answers: (s, t) => {
     tierCounterA[t.id] += 1;
@@ -427,13 +427,13 @@ const staged = simulate({
 });
 ok('EZ 档失误 1 次不致命(不灭=2),之后还能连过两档', staged.correct === 2 * ROUNDS_PER_TIER, String(staged.correct));
 ok('进入 IN 档后首次失误即出局(不灭=1)', staged.end === 'dead' && staged.finalTier === 2, `${staged.end}/${staged.finalTier}`);
-ok('该局作答 15 题(EZ 7 + HD 6 + IN 2)', staged.answered === 15, String(staged.answered));
+ok('该局作答 15 题(EZ 1错+6对,HD 1错+6对,IN 1错)', staged.answered === 15, String(staged.answered));
 // EZ: 错一题把连击清零,所以后三题是 连击1/2/3: 150+165+180 = 495
 // HD: 同样先错一题清零,再 连击1/2/3: 180×1.5×(1.0,1.1,1.2) = 270+297+324 = 891
-ok('该局得分 3150(EZ 1500 + HD 1650)', staged.score === 3150, String(staged.score));
+ok('该局得分 3375(EZ 1125 + HD 2250)', staged.score === 3375, String(staged.score));
 
 // 3d-2. 只有 EZ 档失误、之后全对 → 能一路通关
-const tierCounterB = { ez: 0, hd: 0, in: 0, at: 0, sp: 0 };
+const tierCounterB = { ez: 0, hd: 0, in: 0 };
 const forgiving = simulate({
   answers: (s, t) => {
     tierCounterB[t.id] += 1;
@@ -442,7 +442,7 @@ const forgiving = simulate({
 });
 ok('仅 EZ 档失误 1 次 → 仍能通关', forgiving.end === 'cleared', forgiving.end);
 ok(`该局答对 ${RUN_SIZE} 题(失误不计分,但不影响后面全对)`, forgiving.correct === RUN_SIZE, String(forgiving.correct));
-ok('该局作答 31 题(仅 EZ 多错 1 题)', forgiving.answered === 31, String(forgiving.answered));
+ok('该局作答 19 题(仅 EZ 多错 1 题)', forgiving.answered === 19, String(forgiving.answered));
 ok(`该局最高连击 ${RUN_SIZE}(失误后连对到通关)`, forgiving.bestChain === RUN_SIZE, String(forgiving.bestChain));
 // 关键结论:答错只是重置连击倍率,不会「浪费」分数 ——
 // 该局与全对局的得分完全相同,差别只在多项 1 次作答。
@@ -460,28 +460,28 @@ section('4. 评级阈值');
 
 function rankOf({ cleared, correct, finalTier, tierIndex, score }) {
   // 与 quiz.svelte.ts 的 rank() 保持一致的阈值(EZ/HD 只是早期档,够不着 A)
-  const reachedSp = finalTier >= 4 || tierIndex >= 4;
+  const reachedIn = finalTier >= 2 || tierIndex >= 2;
   if (cleared && correct >= TIERS.length * ROUNDS_PER_TIER) return 'SSS';
   if (cleared) return 'SS';
-  if (reachedSp) return 'S';
-  if (score >= 4200) return 'A';
-  if (score >= 2000) return 'B';
+  if (reachedIn) return 'S';
+  if (score >= 3500) return 'A';
+  if (score >= 1800) return 'B';
   if (score >= 600) return 'C';
   return 'D';
 }
-ok('全对通关 → SSS', rankOf({ cleared: true, correct: 30, finalTier: 4, tierIndex: 4, score: 26415 }) === 'SSS');
-ok('错一题通关 → SS', rankOf({ cleared: true, correct: 29, finalTier: 4, tierIndex: 4, score: 24000 }) === 'SS');
-ok('死在 SP 档 → S', rankOf({ cleared: false, correct: 26, finalTier: 4, tierIndex: 4, score: 12000 }) === 'S');
-ok('打到高阶档 → A', rankOf({ cleared: false, correct: 24, finalTier: 3, tierIndex: 3, score: 4500 }) === 'A');
-ok('打到深入档 → B', rankOf({ cleared: false, correct: 18, finalTier: 2, tierIndex: 2, score: 2200 }) === 'B');
-ok('只过 EZ → C', rankOf({ cleared: false, correct: 6, finalTier: 1, tierIndex: 1, score: 900 }) === 'C');
+ok('全对通关 → SSS', rankOf({ cleared: true, correct: 18, finalTier: 2, tierIndex: 2, score: 10185 }) === 'SSS');
+ok('错一题通关 → SS', rankOf({ cleared: true, correct: 17, finalTier: 2, tierIndex: 2, score: 9400 }) === 'SS');
+ok('死在 IN 档 → S', rankOf({ cleared: false, correct: 13, finalTier: 2, tierIndex: 2, score: 5000 }) === 'S');
+ok('HD 档中段 → A', rankOf({ cleared: false, correct: 10, finalTier: 1, tierIndex: 1, score: 3600 }) === 'A');
+ok('HD 档 → B', rankOf({ cleared: false, correct: 8, finalTier: 1, tierIndex: 1, score: 2000 }) === 'B');
+ok('只过 EZ 未到 HD → C', rankOf({ cleared: false, correct: 6, finalTier: 0, tierIndex: 0, score: 900 }) === 'C');
 ok('低分 → D', rankOf({ cleared: false, correct: 0, finalTier: 0, tierIndex: 0, score: 0 }) === 'D');
 
 // 阈值必须与真实引擎里写的一致(防止两边漂移)
 {
   const quizSrc = readFileSync(new URL('../src/lib/quiz.svelte.ts', import.meta.url), 'utf8');
-  ok('引擎 rank() 的 S 档判定看 finalTierIndex >= 4', quizSrc.includes('finalTierIndex >= 4'));
-  ok('引擎 rank() 的 A/B/C 阈值与本文一致', ['s >= 4200', 's >= 2000', 's >= 600'].every((x) => quizSrc.includes(x)));
+  ok('引擎 rank() 的 S 档判定看 finalTierIndex >= 2', quizSrc.includes('finalTierIndex >= 2'));
+  ok('引擎 rank() 的 A/B/C 阈值与本文一致', ['s >= 3500', 's >= 1800', 's >= 600'].every((x) => quizSrc.includes(x)));
 }
 
 /* ------------------------------------------------------------------ */

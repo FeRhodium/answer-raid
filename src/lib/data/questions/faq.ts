@@ -31,7 +31,7 @@ export const faqQuestions: LocalizedQuestion[] = [
   },
   {
     id: 'faq-2',
-    tier: 'sp',
+    tier: 'in',
     tags: ['数据单位', '常识'],
     answer: 2,
     zh: {
@@ -179,7 +179,7 @@ export const faqQuestions: LocalizedQuestion[] = [
   },
   {
     id: 'faq-9',
-    tier: 'sp',
+    tier: 'in',
     tags: ['云服务', '常识'],
     answer: 2,
     zh: {
@@ -408,7 +408,7 @@ export const faqQuestions: LocalizedQuestion[] = [
   /* ------------------------------ AT ------------------------------ */
   {
     id: 'faq-19',
-    tier: 'at',
+    tier: 'in',
     tags: ['安全', '隐私'],
     answer: 2,
     zh: {
@@ -464,7 +464,7 @@ export const faqQuestions: LocalizedQuestion[] = [
   },
   {
     id: 'faq-21',
-    tier: 'sp',
+    tier: 'in',
     tags: ['硬件', 'SSD'],
     answer: 3,
     zh: {
@@ -492,7 +492,7 @@ export const faqQuestions: LocalizedQuestion[] = [
   },
   {
     id: 'faq-22',
-    tier: 'at',
+    tier: 'in',
     tags: ['硬件', '液体'],
     answer: 1,
     zh: {
@@ -520,7 +520,7 @@ export const faqQuestions: LocalizedQuestion[] = [
   },
   {
     id: 'faq-23',
-    tier: 'sp',
+    tier: 'in',
     tags: ['二进制', '进制转换'],
     answer: 3,
     zh: {
@@ -538,7 +538,7 @@ export const faqQuestions: LocalizedQuestion[] = [
   },
   {
     id: 'faq-24',
-    tier: 'at',
+    tier: 'in',
     tags: ['安全', '防护'],
     answer: 0,
     zh: {

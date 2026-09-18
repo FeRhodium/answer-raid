@@ -1,11 +1,11 @@
 import type { TierMeta } from './types';
 
 /**
- * 五个难度档位。代号沿用音游的难度分级习惯(EZ → HD → IN → AT → SP),
- * 只是**难度标识**,不带任何身份或圈层暗示。
+ * 三个难度档位:EZ → HD → IN。
+ * 代号沿用音游的难度分级习惯,只是**难度标识**,不带身份或圈层暗示。
  *
- * 越往上越不许犯错:不灭次数递减、限时收紧、基础分放大。
- * 展示文案(名称与说明)走 i18n 的 `tier.<id>.label` / `.desc`,这里只管数值。
+ * 越往上越不许犯错:限时收紧、基础分放大,IN 档起不灭次数降到 1(错一题即出局)。
+ * 展示文案走 i18n 的 `tier.<id>.label` / `.desc`,这里只管数值。
  */
 export const TIERS: TierMeta[] = [
   {
@@ -28,7 +28,7 @@ export const TIERS: TierMeta[] = [
     icon: '◈',
     allowMiss: 2,
     timeLimit: 35,
-    baseScore: 180,
+    baseScore: 200,
   },
   {
     id: 'in',
@@ -39,29 +39,7 @@ export const TIERS: TierMeta[] = [
     icon: '◆',
     allowMiss: 1,
     timeLimit: 30,
-    baseScore: 280,
-  },
-  {
-    id: 'at',
-    index: 3,
-    name: 'AT',
-    hue: 38,
-    accent: '#ffc93c',
-    icon: '◤',
-    allowMiss: 1,
-    timeLimit: 25,
-    baseScore: 400,
-  },
-  {
-    id: 'sp',
-    index: 4,
-    name: 'SP',
-    hue: 320,
-    accent: '#ff3ea5',
-    icon: '✶',
-    allowMiss: 1,
-    timeLimit: 22,
-    baseScore: 560,
+    baseScore: 320,
   },
 ];
 

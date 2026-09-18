@@ -19,7 +19,7 @@ const ALL_SOURCE: LocalizedQuestion[] = [
  * 刻意**从数据推导**而不是手写映射:改一道题的档位只需要动它自己的 `tier`,
  * 这里不会漏同步(手写映射曾经就把整档搞空过)。
  */
-const BANK_SIZE: Record<TierId, LocalizedQuestion[]> = { ez: [], hd: [], in: [], at: [], sp: [] };
+const BANK_SIZE: Record<TierId, LocalizedQuestion[]> = { ez: [], hd: [], in: [] };
 for (const q of ALL_SOURCE) BANK_SIZE[q.tier].push(q);
 
 export const BANK_SOURCE: Record<TierId, LocalizedQuestion[]> = BANK_SIZE;

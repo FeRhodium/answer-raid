@@ -8,7 +8,7 @@ import type { LocalizedQuestion } from '../types';
 export const systemsQuestions: LocalizedQuestion[] = [
   {
     id: 'hacker-1',
-    tier: 'at',
+    tier: 'in',
     tags: ['大模型', 'GPT'],
     code: `G = Generative      builds new output
 P = Pre-trained     trained on data first
@@ -74,7 +74,7 @@ client.chat(model="...")   # just swap in one of the options below`,
   },
   {
     id: 'hacker-4',
-    tier: 'at',
+    tier: 'in',
     tags: ['Web', '前端框架'],
     code: `frontend: runs in the browser, draws the UI
 backend:  runs on a server, owns the data`,
@@ -95,7 +95,7 @@ backend:  runs on a server, owns the data`,
   },
   {
     id: 'hacker-5',
-    tier: 'sp',
+    tier: 'in',
     tags: ['大模型', '开源'],
     answer: 0,
     zh: {

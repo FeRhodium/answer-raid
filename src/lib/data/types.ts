@@ -2,7 +2,7 @@
 
 import type { Lang } from '../i18n.svelte.ts';
 
-export type TierId = 'ez' | 'hd' | 'in' | 'at' | 'sp';
+export type TierId = 'ez' | 'hd' | 'in';
 
 /** `none` 表示纯文本题;`svg` 时 chartData 是完整 <svg> 源码;`ascii` 时是等宽字符画。 */
 export type ChartKind = 'none' | 'svg' | 'ascii';

@@ -353,8 +353,8 @@ await sleep(60);
 
 section('2. 标题页');
 ok('切换到标题页', has('.intro'));
-ok('展示五个难度档位', $$('.tier').length === 5, `实际 ${$$('.tier').length}`);
-ok('档位文案含 EZ/HD/IN/AT/SP', ['轻松', '进阶', '深入', '高阶', '特殊'].every((t) => text('.tiers').includes(t)));
+ok('展示三个难度档位', $$('.tier').length === 3, `实际 ${$$('.tier').length}`);
+ok('档位文案含 EZ/HD/IN', ['轻松', '进阶', '深入'].every((t) => text('.tiers').includes(t)));
 ok('有代号输入框', has('.field input'));
 ok('三个锦囊都列出来了', $$('.jokers li').length === 3, `实际 ${$$('.jokers li').length}`);
 
@@ -446,7 +446,7 @@ section('6. 结算页内容');
 ok('出现结算页', has('.res'));
 ok('显示评级', text('.rt').length === 1, text('.rt'));
 ok('显示得分', /\d/.test(text('.sc')), text('.sc'));
-ok('逐档战绩五条', $$('.heat li').length === 5, `实际 ${$$('.heat li').length}`);
+ok('逐档战绩三条', $$('.heat li').length === 3, `实际 ${$$('.heat li').length}`);
 ok('有「再来一局」按钮', $$('button').some((b) => b.textContent.includes('再来一局')));
 ok('有分享战绩按钮', $$('button').some((b) => b.textContent.includes('分享战绩')));
 const rec = window.localStorage.getItem('csa.raid.best.v1');
