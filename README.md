@@ -2,6 +2,10 @@
 
 一个炫酷、硬核的**三档难度答题网站**。技术栈:**Svelte 5 (runes) + Vite + TypeScript**,
 无后端、无运行时依赖,构建产物是一坨纯静态文件,丢到任何静态托管 / U 盘 / 内网 nginx 都能跑。
+**手机 / 平板 / 桌面自适应**,触屏可直接点按作答(键位提示会自动隐藏)。
+
+> 📱 现场扫码答题的体验做了专门适配:HUD 在窄屏重排、弹层在矮视口可滚动、
+> 刘海屏安全区(`viewport-fit=cover` + `env(safe-area-inset-*)`)都已处理。
 
 ```bash
 pnpm install
@@ -56,6 +60,9 @@ pnpm test       # 全套验证(类型检查 + 题库 + 引擎 + 构建 + DOM 冒
 ### 键盘操作
 
 <kbd>ESC</kbd> 中途退出 · <kbd>A</kbd><kbd>B</kbd><kbd>C</kbd><kbd>D</kbd> 选择选项 · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> 使用锦囊 · <kbd>Enter</kbd> 开局 / 跳过自检
+
+手机 / 触屏设备上没有键位提示(自动隐藏),所有操作直接点按即可;
+悬停位移类的装饰效果也只对鼠标生效,不会在触屏上"点一下粘住"。
 
 ---
 
@@ -275,3 +282,15 @@ tools/                            离线验证脚本(不参与构建)
 
 `pnpm build` 后把 `dist/` 整个目录丢到任意静态服务的子路径即可(`vite.config.ts` 里
 `base: './'` 已配成相对路径,不依赖根目录)。
+
+### GitHub Pages(自动部署)
+
+仓库自带 GitHub Actions 工作流 `.github/workflows/deploy.yml`:推送到 `main`
+即自动跑**全套验证**(`pnpm test`:类型检查 + 题库 + 主题 + 引擎 + 构建 + DOM 冒烟)
+并部署到 GitHub Pages。
+
+首次使用需在仓库 **Settings → Pages → Build and deployment → Source** 选择
+**GitHub Actions**(仅需一次),之后每次推送到 `main` 自动发布,地址为
+`https://<用户名>.github.io/answer-raid/`。产物用相对 `base`,落在子路径下不需要任何额外配置。
+
+本地跑 CI 同款验证:`pnpm test`(纯离线,不需要浏览器)。
