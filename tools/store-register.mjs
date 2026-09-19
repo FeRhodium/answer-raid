@@ -11,6 +11,13 @@ globalThis.localStorage = {
   removeItem: (k) => store.delete(k),
   clear: () => store.clear(),
 };
+// Node 21+ 自带全局 navigator(language 恒为 'en-US'),会让 i18n 的
+// 「浏览器语言」探测在测试环境里把默认语言挑成英文。测试要的是确定性:
+// 固定成 zh,与用例里「无任何偏好时默认中文」的断言一致。
+Object.defineProperty(globalThis, 'navigator', {
+  value: { language: 'zh-CN', languages: ['zh-CN', 'zh', 'en'] },
+  configurable: true,
+});
 globalThis.window = undefined;
 globalThis.AudioContext = class {
   constructor() {
