@@ -62,7 +62,9 @@
     inset: 0;
     z-index: 60;
     display: grid;
-    place-items: center;
+    /* 不用 place-items: center —— 内容比视口高时(手机横屏)它会把上半截
+       裁到滚动不到的地方;margin:auto 居中在溢出时会自动退让,可正常滚到 */
+    overflow-y: auto;
     padding: 1.2rem;
     background: radial-gradient(
       ellipse 70% 60% at 50% 50%,
@@ -104,11 +106,20 @@
     position: relative;
     max-width: 620px;
     width: 100%;
+    margin: auto;
     padding: 1.6rem 1.5rem 1.3rem;
     text-align: center;
     border-color: hsl(var(--th) 80% 60% / 0.45);
     box-shadow: 0 0 60px hsl(var(--th) 90% 40% / 0.25);
     animation: rise 0.4s ease-out both;
+  }
+  @media (max-width: 560px) {
+    .box {
+      padding: 1.2rem 1rem 1.05rem;
+    }
+    .nm {
+      font-size: 1.45rem;
+    }
   }
 
   .clear {

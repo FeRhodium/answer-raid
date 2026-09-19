@@ -307,4 +307,47 @@
     color: var(--danger);
     animation: blink 0.5s steps(1) infinite;
   }
+
+  /* ---------- 窄屏(手机) ---------- */
+  @media (max-width: 680px) {
+    .hud {
+      padding: 0.6rem 0.75rem 0.7rem;
+      gap: 0.5rem;
+    }
+    /* 第一行放不下三栏:代号 + 分数一行,三档徽章整行换到第二行 */
+    .row1 {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        'who score'
+        'tiers tiers';
+      gap: 0.5rem 0.7rem;
+    }
+    .who {
+      grid-area: who;
+    }
+    .tiers {
+      grid-area: tiers;
+      justify-content: flex-start;
+    }
+    .scoreBox {
+      grid-area: score;
+    }
+    /* "root@csa:~$" 前缀在小屏占位太宽 */
+    .who .pfx {
+      display: none;
+    }
+    .score {
+      font-size: 1.35rem;
+    }
+    .row2 {
+      gap: 0.5rem 0.7rem;
+    }
+    .meta {
+      gap: 0.45rem 0.75rem;
+      font-size: 0.76rem;
+    }
+    .timer {
+      min-width: 100%;
+    }
+  }
 </style>

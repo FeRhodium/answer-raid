@@ -149,10 +149,17 @@
     z-index: 3;
     max-width: 1080px;
     margin: 0 auto;
-    padding: clamp(1rem, 3vw, 2rem) clamp(0.9rem, 3vw, 1.6rem) 3rem;
+    padding: clamp(1rem, 3vw, 2rem) clamp(0.9rem, 3vw, 1.6rem)
+      max(2.6rem, calc(env(safe-area-inset-bottom) + 1rem));
     display: flex;
     flex-direction: column;
     gap: clamp(0.9rem, 2vw, 1.3rem);
+  }
+  /* 手机上右上角按钮是 fixed 的,结算横幅给它们让位 */
+  @media (max-width: 760px) {
+    .res {
+      padding-top: 3.4rem;
+    }
   }
 
   .banner {
@@ -391,7 +398,8 @@
   .logo {
     margin: 1.3rem 0 0;
     font-family: var(--mono);
-    font-size: clamp(0.32rem, 1.5vw, 0.6rem);
+    /* 每行 25 字符,等宽字宽 ≈ 0.6em:按可用宽度反推,手机上不至于缩成一粒 */
+    font-size: min(0.6rem, calc((100vw - 4.4rem) / 16));
     line-height: 1.05;
     color: var(--accent);
     opacity: 0.35;

@@ -143,6 +143,9 @@ body {
   font-size: 16px;
   line-height: 1.55;
   overflow-x: hidden;
+  /* 手机横屏 / 窄视口下禁用 Safari 的自动字号放大 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -178,6 +181,8 @@ button {
   font-family: var(--mono);
   color: inherit;
   cursor: pointer;
+  /* 触屏:去掉双击缩放等待,点按即时响应 */
+  touch-action: manipulation;
 }
 
 ::-webkit-scrollbar {

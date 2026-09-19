@@ -67,6 +67,30 @@
     const hue = inRun || game.phase === 'over' ? tier().hue : 152;
     document.documentElement.style.setProperty('--hue', String(hue));
   });
+
+  /**
+   * 视口回滚:抽到新题 / 进新屏时回到顶部,判定面板出现时把它带进视野。
+   * 移动端答完题往往停在页底,不回滚的话下一题的题干在屏幕外;
+   * 桌面宽屏下页面本就一屏放得下,这两个滚动基本都是零位移,无副作用。
+   * 注意只在「题目对象换了 / 屏幕换了」时回顶 —— 退出确认弹窗也算 phase 变化,
+   * 但那时不该动滚动位置。
+   */
+  let lastQ: unknown = null;
+  let lastPhase: string = 'boot';
+  $effect(() => {
+    const q = game.current;
+    const ph = game.phase;
+    const newQuestion = q !== null && q !== lastQ;
+    const newScreen = ph !== lastPhase && (ph === 'intro' || ph === 'over');
+    const toFeedback = ph === 'feedback' && lastPhase === 'playing';
+    lastQ = q;
+    lastPhase = ph;
+    if ((newQuestion || newScreen) && typeof window.scrollTo === 'function') window.scrollTo(0, 0);
+    if (toFeedback) {
+      const fb = document.querySelector('.fb');
+      if (fb && typeof fb.scrollIntoView === 'function') fb.scrollIntoView({ block: 'nearest' });
+    }
+  });
 </script>
 
 <RainBackground enabled={theme() === 'dark'} />
@@ -156,10 +180,17 @@
     z-index: 3;
     max-width: 940px;
     margin: 0 auto;
-    padding: 0 clamp(0.6rem, 2.4vw, 1.2rem) 3rem;
+    padding: 0 clamp(0.6rem, 2.4vw, 1.2rem) max(2.6rem, calc(env(safe-area-inset-bottom) + 1rem));
     display: flex;
     flex-direction: column;
     gap: clamp(0.7rem, 1.8vw, 1.05rem);
+  }
+  /* 窄视口(含笔记本半屏 / 平板 / 手机):右上角的语言/主题/静音按钮是 fixed 定位,
+     会盖住 HUD 右侧的分数区 —— 给对局内容让出一行头部空间 */
+  @media (max-width: 1240px) {
+    .play {
+      padding-top: 2.9rem;
+    }
   }
   .stack {
     display: flex;
@@ -189,11 +220,18 @@
     color: var(--danger);
     border-color: var(--danger);
   }
+  /* 触屏 / 窄屏没有 ESC 键,键帽提示只是噪音 */
+  @media (hover: none), (max-width: 700px) {
+    .quitBtn .kbd {
+      display: none;
+    }
+  }
 
   .corner {
     position: fixed;
-    top: 0.5rem;
-    right: 0.55rem;
+    /* 刘海屏(viewport-fit=cover)下避开系统预留区 */
+    top: max(0.5rem, env(safe-area-inset-top));
+    right: max(0.55rem, env(safe-area-inset-right));
     z-index: 95;
     display: flex;
     gap: 0.35rem;

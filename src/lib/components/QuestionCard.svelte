@@ -211,14 +211,17 @@
     transform-origin: top;
     transition: transform 0.16s ease-out;
   }
-  .opts button:hover:not(:disabled) {
-    border-color: var(--line-hard);
-    background: linear-gradient(90deg, hsl(var(--hue) 80% 50% / 0.16), transparent 75%);
-    box-shadow: inset 0 0 24px hsl(var(--hue) 100% 60% / 0.08);
-    transform: translateX(3px);
-  }
-  .opts button:hover:not(:disabled)::before {
-    transform: scaleY(1);
+  /* 悬停位移/高亮只对真鼠标生效 —— 触屏上 :hover 会在点按后"粘住" */
+  @media (hover: hover) {
+    .opts button:hover:not(:disabled) {
+      border-color: var(--line-hard);
+      background: linear-gradient(90deg, hsl(var(--hue) 80% 50% / 0.16), transparent 75%);
+      box-shadow: inset 0 0 24px hsl(var(--hue) 100% 60% / 0.08);
+      transform: translateX(3px);
+    }
+    .opts button:hover:not(:disabled)::before {
+      transform: scaleY(1);
+    }
   }
   .opts button:disabled {
     cursor: default;
@@ -283,5 +286,33 @@
   .opts button.picked {
     outline: 1px solid currentColor;
     outline-offset: 1px;
+  }
+
+  /* ---------- 窄屏 / 触屏 ---------- */
+  /* 没有键盘就没有 A/B/C/D 键帽提示;选项左侧已有同样的字母块,重复展示只是噪音。
+     只藏键帽本身、保留三列网格 —— 判定阶段的 ✓/✗ 还要落在这个位置。 */
+  @media (hover: none), (max-width: 700px) {
+    .mark .kbd {
+      display: none;
+    }
+  }
+  @media (max-width: 560px) {
+    /* 代码块在手机上容易横向溢出,缩一档减少滚动 */
+    pre.code {
+      font-size: 0.82rem;
+      padding: 0.75rem 0.8rem;
+    }
+    pre.chart {
+      font-size: 0.74rem;
+      padding: 0.7rem 0.75rem;
+    }
+    .opts button {
+      padding: 0.6rem 0.7rem;
+      gap: 0.55rem;
+    }
+    .letter {
+      width: 1.9rem;
+      height: 1.9rem;
+    }
   }
 </style>

@@ -47,13 +47,15 @@
     inset: 0;
     z-index: 80;
     display: grid;
-    place-items: center;
+    /* margin:auto 居中:手机横屏等矮视口下内容溢出时仍可滚动,不会裁掉顶部 */
+    overflow-y: auto;
     padding: 1.2rem;
     background: var(--scrim);
     backdrop-filter: blur(3px);
   }
   .box {
     width: min(460px, 100%);
+    margin: auto;
     padding: 1.2rem 1.25rem 1.35rem;
     display: flex;
     flex-direction: column;

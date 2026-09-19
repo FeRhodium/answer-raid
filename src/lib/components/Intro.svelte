@@ -168,10 +168,17 @@
     z-index: 3;
     max-width: 1180px;
     margin: 0 auto;
-    padding: clamp(1.2rem, 3.5vw, 2.6rem) clamp(0.9rem, 3vw, 2rem) 3rem;
+    padding: clamp(1.2rem, 3.5vw, 2.6rem) clamp(0.9rem, 3vw, 2rem)
+      max(2.6rem, calc(env(safe-area-inset-bottom) + 1rem));
     display: flex;
     flex-direction: column;
     gap: clamp(1.2rem, 3vw, 2rem);
+  }
+  /* 手机上右上角的语言/主题/静音按钮是 fixed 的,标题区给它们让位 */
+  @media (max-width: 760px) {
+    .intro {
+      padding-top: 3.4rem;
+    }
   }
 
   .head {
@@ -195,7 +202,9 @@
     margin: 0;
     font-family: var(--mono);
     font-weight: 700;
-    font-size: clamp(0.3rem, 1.42vw, 0.78rem);
+    /* ASCII logo 每行 49 字符,等宽字宽 ≈ 0.6em:字号直接按可用宽度反推,
+       手机上也能撑满而不是缩成看不清的一小团(上限保持桌面原大小)。 */
+    font-size: min(0.78rem, calc((100vw - 4.4rem) / 30));
     line-height: 1.05;
     letter-spacing: 0;
     color: var(--accent);
@@ -289,6 +298,13 @@
   .tier:hover {
     transform: translateX(4px);
     box-shadow: -4px 0 22px hsl(var(--tier-hue) 100% 60% / 0.22);
+  }
+  /* 触屏点一下位移就"粘住"了,悬停特效只给鼠标 */
+  @media (hover: none) {
+    .tier:hover {
+      transform: none;
+      box-shadow: none;
+    }
   }
   .idx {
     font-size: 0.72rem;

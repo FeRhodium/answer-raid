@@ -116,6 +116,13 @@
     box-shadow: 0 0 22px var(--card-glow), inset 0 0 24px var(--card-glow);
     transform: translateY(-2px);
   }
+  @media (hover: none) {
+    .jcard:hover:not(.dead) {
+      border-color: var(--card-line);
+      box-shadow: none;
+      transform: none;
+    }
+  }
   .jcard:active:not(.dead) {
     transform: translateY(0);
   }
@@ -144,5 +151,16 @@
   .hk {
     grid-row: span 2;
     font-size: 0.7rem;
+  }
+
+  /* ---------- 窄屏 / 触屏 ---------- */
+  /* 触屏没有 1/2/3 键位,藏掉键帽提示 */
+  @media (hover: none), (max-width: 700px) {
+    .hk {
+      display: none;
+    }
+    .jbar {
+      gap: 0.6rem;
+    }
   }
 </style>
